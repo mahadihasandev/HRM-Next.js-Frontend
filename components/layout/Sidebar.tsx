@@ -24,6 +24,7 @@ import {
   Server,
   Award,
   Factory,
+  ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BrandMark, SearchInput, Text } from "@/components/shared";
@@ -40,6 +41,7 @@ export type NavTab =
   | "leave"
   | "salary"
   | "factory"
+  | "people"
   | "accounting"
   | "snd"
   | "sfm"
@@ -188,6 +190,7 @@ export const NAV_MODULES: NavModule[] = [
     sub: "Lines, Shifts & Production",
     icon: Factory,
   },
+  { id: "people", label: "HR & compliance", sub: "Documents, Rosters & Worker Welfare", icon: ShieldCheck },
   {
     id: "performance",
     label: "Performance & letters",
@@ -274,6 +277,7 @@ const NAV_GROUPS: { label: string; tabs: NavTab[] }[] = [
   {
     label: "PEOPLE OPERATIONS",
     tabs: [
+      "people",
       "recruitment",
       "performance",
       "hr-setup",

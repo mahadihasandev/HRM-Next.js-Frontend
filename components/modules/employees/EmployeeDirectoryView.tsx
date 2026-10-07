@@ -300,7 +300,7 @@ export function EmployeeDirectoryView({
       )}
 
       {activeSubTab !== 'directory' && process.env.NEXT_PUBLIC_ENABLE_DEMO_PREVIEWS !== 'true' ? (
-        <Banner variant="info" title="This employee tool requires server integration" description="The inherited tool uses demonstration data. Use the employee directory and approved payroll workflow for current records." />
+        <Banner variant="info" title="This employee tool is not available yet" description="Use the employee directory and approved payroll workflow for current records." />
       ) : <>
       {activeSubTab === "birthdays" && <EmployeeBirthdaysTab />}
       {activeSubTab === "probation" && <EmployeeProbationTab />}

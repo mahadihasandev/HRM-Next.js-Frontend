@@ -10,7 +10,7 @@ jobs:
           node-version: '20'
           cache: npm
       - run: npm ci
-      - run: npm run test:payroll
+      - run: npm test
       - run: npx tsc --noEmit
       - run: npm run lint
       - run: npm run build

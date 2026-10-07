@@ -19,7 +19,8 @@ export async function requestHrm(url: string, options: RequestInit = {}): Promis
     const result = await handle;
     if (result.error) {
       const error = result.error;
-      const status = 'status' in error && typeof error.status === 'number' ? error.status : 503;
+      const errorStatus = 'status' in error && typeof error.status === 'number' ? error.status : 503;
+      const status = errorStatus >= 200 && errorStatus < 300 ? 422 : errorStatus;
       const body = 'data' in error ? error.data : { message: 'API request failed' };
       return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
     }

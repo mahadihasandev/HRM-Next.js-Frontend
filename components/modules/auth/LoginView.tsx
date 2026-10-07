@@ -201,7 +201,7 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
           role: "employee",
         };
         const token = data.token;
-        dispatch(setUser({ user: authenticatedUser, token }));
+        dispatch(setUser({ user: authenticatedUser, token, rememberMe }));
         if (onLoginSuccess) {
           onLoginSuccess(authenticatedUser, token);
         }
@@ -295,7 +295,7 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
           setIsLoading(false);
           return;
         }
-        dispatch(setUser({ user: authenticatedUser, token }));
+        dispatch(setUser({ user: authenticatedUser, token, rememberMe }));
         if (onLoginSuccess) {
           onLoginSuccess(authenticatedUser, token);
         }

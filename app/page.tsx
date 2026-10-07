@@ -606,7 +606,7 @@ export default function AppHome() {
           ) : (
             <>
               {process.env.NEXT_PUBLIC_ENABLE_DEMO_PREVIEWS !== 'true' && !['dashboard', 'employees', 'today-attendance', 'attendance', 'leave', 'salary', 'factory'].includes(activeTab) ? (
-                <CardWrapper title="Module requires server integration" description="This inherited module contains demonstration data. It is unavailable until company-scoped persistence and permissions are implemented." />
+                <CardWrapper title="This module is not available yet" description="Use employee, payroll, leave, attendance and factory tools for your company records." />
               ) : <>
               {activeTab === "dashboard" && (
                 <DashboardView

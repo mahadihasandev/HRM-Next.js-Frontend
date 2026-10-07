@@ -4,18 +4,13 @@ import { API_BASE_URL } from "@/lib/api/config";
 
 import React, { useState } from "react";
 import {
-  Building2,
   Lock,
   Mail,
-  ShieldCheck,
   Eye,
   EyeOff,
   ArrowRight,
   CheckCircle2,
   AlertCircle,
-  Clock,
-  Laptop,
-  UserPlus,
   Send,
   RefreshCw,
   Loader2,
@@ -23,8 +18,10 @@ import {
   User,
   Briefcase,
   Phone,
+  Factory,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import { BrandMark, Text, Title } from "@/components/shared";
 import { useAppDispatch } from "@/store/hooks";
 import { setUser, AuthUser } from "@/store/authSlice";
 import { PERSONA_PRESETS } from "@/components/layout/TopNavbar";
@@ -71,7 +68,7 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
   const [isVerifyingCode, setIsVerifyingCode] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
 
-  const handlePersonaSelect = (persona: typeof PERSONA_PRESETS[0]) => {
+  const handlePersonaSelect = (persona: (typeof PERSONA_PRESETS)[0]) => {
     setIdentifier(persona.fullId);
     setPassword("password123");
     setErrorMessage(null);
@@ -79,7 +76,9 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
 
   const handleSendVerificationCode = async () => {
     if (!regEmail.trim()) {
-      setErrorMessage("Please enter your email address to receive a verification code.");
+      setErrorMessage(
+        "Please enter your email address to receive a verification code.",
+      );
       return;
     }
     setErrorMessage(null);
@@ -87,7 +86,10 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
     try {
       const res = await fetch(`${API_BASE_URL}/auth/send-verification-code`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
         body: JSON.stringify({ email: regEmail.trim() }),
       });
       const data = await res.json();
@@ -96,12 +98,16 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
         setRegIsVerified(false);
         if (data.dev_code) {
           setRegDevCode(data.dev_code);
-          toast.success(`Verification code sent! Test Code: ${data.dev_code}`, { duration: 6000 });
+          toast.success(`Verification code sent! Test Code: ${data.dev_code}`, {
+            duration: 6000,
+          });
         } else {
           toast.success("Verification code sent to your email inbox!");
         }
       } else {
-        setErrorMessage(data?.message || "Failed to dispatch verification code.");
+        setErrorMessage(
+          data?.message || "Failed to dispatch verification code.",
+        );
       }
     } catch {
       setErrorMessage("Network error: Could not reach verification server.");
@@ -120,7 +126,10 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
     try {
       const res = await fetch(`${API_BASE_URL}/auth/verify-code`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
         body: JSON.stringify({ email: regEmail.trim(), code: regCode.trim() }),
       });
       const data = await res.json();
@@ -128,7 +137,9 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
         setRegIsVerified(true);
         toast.success("Email verified successfully! ✓");
       } else {
-        setErrorMessage(data?.message || "Invalid or expired verification code.");
+        setErrorMessage(
+          data?.message || "Invalid or expired verification code.",
+        );
       }
     } catch {
       setErrorMessage("Network error: Could not verify code.");
@@ -140,11 +151,15 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
   const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!regName.trim() || !regEmail.trim() || !regPassword.trim()) {
-      setErrorMessage("Full Name, Corporate/Personal Email, and Password are required.");
+      setErrorMessage(
+        "Full Name, Corporate/Personal Email, and Password are required.",
+      );
       return;
     }
     if (!regCode.trim()) {
-      setErrorMessage("Please request and enter your 6-digit email verification code.");
+      setErrorMessage(
+        "Please request and enter your 6-digit email verification code.",
+      );
       return;
     }
 
@@ -154,7 +169,10 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
     try {
       const res = await fetch(`${API_BASE_URL}/register`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
         body: JSON.stringify({
           name: regName.trim(),
           email: regEmail.trim(),
@@ -168,7 +186,9 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
 
       const data = await res.json();
       if (res.ok && data.status) {
-        toast.success(`Account registered! Welcome to Smart ERP, ${data.name}.`);
+        toast.success(
+          `Account registered! Welcome to Smart ERP, ${data.name}.`,
+        );
         const authenticatedUser: AuthUser = {
           id: data.user_id || data.employee_id || 100,
           fullId: data.employee_full_id || "SMT-0100",
@@ -184,10 +204,15 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
           onLoginSuccess(authenticatedUser, token);
         }
       } else {
-        setErrorMessage(data?.message || "Registration failed. Please check your verification code.");
+        setErrorMessage(
+          data?.message ||
+            "Registration failed. Please check your verification code.",
+        );
       }
     } catch {
-      setErrorMessage("Server error during registration. Ensure backend is running.");
+      setErrorMessage(
+        "Server error during registration. Ensure backend is running.",
+      );
     } finally {
       setIsRegistering(false);
     }
@@ -204,7 +229,8 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
     setErrorMessage(null);
 
     const apiEmail =
-      identifier.trim() === "SMT-0001" || identifier.trim().toLowerCase() === "admin"
+      identifier.trim() === "SMT-0001" ||
+      identifier.trim().toLowerCase() === "admin"
         ? "admin@smart.com"
         : identifier.trim();
 
@@ -224,7 +250,7 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
       if (response.ok) {
         const json = await response.json();
         const matchedPreset = PERSONA_PRESETS.find(
-          (p) => p.fullId.toLowerCase() === identifier.trim().toLowerCase()
+          (p) => p.fullId.toLowerCase() === identifier.trim().toLowerCase(),
         );
 
         const authenticatedUser: AuthUser = {
@@ -237,7 +263,9 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
             json.employee_name ||
             json.name ||
             matchedPreset?.name ||
-            (identifier.startsWith("SMT") ? `Employee (${identifier})` : "System Administrator"),
+            (identifier.startsWith("SMT")
+              ? `Employee (${identifier})`
+              : "System Administrator"),
           email:
             json.email ||
             (identifier.includes("@")
@@ -259,7 +287,9 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
 
         const token = json.token;
         if (!token) {
-          setErrorMessage("Authentication failed: No valid token issued by server.");
+          setErrorMessage(
+            "Authentication failed: No valid token issued by server.",
+          );
           setIsLoading(false);
           return;
         }
@@ -271,66 +301,130 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
         return;
       } else {
         const errData = await response.json().catch(() => null);
-        setErrorMessage(errData?.message || "Invalid credentials provided. Please check your username and password.");
+        setErrorMessage(
+          errData?.message ||
+            "Invalid credentials provided. Please check your username and password.",
+        );
         setIsLoading(false);
         return;
       }
     } catch {
-      setErrorMessage("Unable to connect to authentication server. Please ensure the backend is running at http://127.0.0.1:8000.");
+      setErrorMessage(
+        "Could not reach the sign-in service. Please check your connection and try again.",
+      );
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col justify-between text-slate-900">
-      {/* Top Corporate Status Header */}
-      <header className="h-16 border-b border-slate-300 px-3 sm:px-12 flex items-center justify-between bg-white sticky top-0 z-20">
-        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-          <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl bg-slate-900 text-white flex items-center justify-center font-black shadow-xs shrink-0">
-            <Building2 className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
-          </div>
-          <div className="min-w-0">
-            <h1 className="text-xs sm:text-sm font-extrabold text-slate-950 tracking-tight leading-none truncate">
-              SMART TECHNOLOGIES (BD) LTD.
-            </h1>
-            <p className="text-[10px] sm:text-[11px] font-bold text-slate-600 leading-none mt-0.5 truncate">
-              Smart HRM &amp; Enterprise ERP &bull; Corporate Portal
-            </p>
+    <div className="grid min-h-dvh bg-white lg:grid-cols-[1fr_1.05fr]">
+      <section className="relative hidden min-h-dvh flex-col overflow-hidden bg-[#123f40] p-12 text-white lg:flex xl:p-16">
+        <div className="relative flex items-center gap-3">
+          <BrandMark className="!bg-white/10" />
+          <Text className="!text-xl !font-semibold !text-white">
+            Smart HRM<span className="text-teal-300">.</span>
+          </Text>
+        </div>
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -bottom-48 -left-44 size-[640px] rounded-full border-[80px] border-white/[.025]"
+        />
+        <div className="relative my-auto py-14">
+          <Text
+            variant="caption"
+            className="!text-[11px] !font-medium !tracking-[.18em] !text-teal-200/80"
+          >
+            BUILT AROUND YOUR PEOPLE
+          </Text>
+          <Title
+            level={1}
+            className="mt-5 max-w-md !text-[44px] !font-medium !leading-[1.15] !tracking-tight !text-white xl:!text-[52px]"
+          >
+            A better workday
+            <br />
+            starts here<span className="text-teal-300">.</span>
+          </Title>
+          <Text className="mt-6 max-w-sm !text-sm !leading-7 !text-teal-100/75">
+            Bring your people, payroll and factory operations together. Less
+            paperwork. More time for what matters.
+          </Text>
+          <div className="mt-12 max-w-md rounded-2xl border border-white/10 bg-white/[.04] p-5">
+            <div className="flex items-center justify-between">
+              <Text className="!text-xs !font-medium !text-white">
+                One connected workspace
+              </Text>
+              <span className="flex size-7 items-center justify-center rounded-full bg-teal-300/10">
+                <CheckCircle2 className="size-4 text-teal-200" />
+              </span>
+            </div>
+            <div className="mt-5 space-y-3">
+              {[
+                {
+                  icon: User,
+                  title: "People & attendance",
+                  detail: "Every employee, every workday",
+                },
+                {
+                  icon: Briefcase,
+                  title: "Payroll & bank documents",
+                  detail: "Prepare, review and approve",
+                },
+                {
+                  icon: Factory,
+                  title: "Factory operations",
+                  detail: "From production lines to floor actions",
+                },
+              ].map((item) => (
+                <div
+                  key={item.title}
+                  className="flex items-center gap-3 rounded-xl bg-white/[.04] p-3"
+                >
+                  <span className="flex size-9 items-center justify-center rounded-lg bg-teal-300/10 text-teal-200">
+                    <item.icon className="size-4" />
+                  </span>
+                  <div>
+                    <Text className="!text-xs !font-medium !text-white">
+                      {item.title}
+                    </Text>
+                    <Text
+                      variant="caption"
+                      className="mt-1 !text-[10px] !text-teal-100/60"
+                    >
+                      {item.detail}
+                    </Text>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
-
-        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-          <div className="hidden sm:flex items-center gap-1.5 text-xs font-bold text-slate-800 bg-white border border-slate-300 px-3 py-1.5 rounded-xl shadow-2xs">
-            <span className="h-2 w-2 rounded-full bg-emerald-600 animate-pulse" />
-            <span>ZKTeco BioSync: Active</span>
-          </div>
-
-          <div className="hidden md:flex items-center gap-1.5 text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-300 px-3 py-1.5 rounded-xl shadow-2xs">
-            <ShieldCheck className="h-3.5 w-3.5 text-emerald-700" />
-            <span>BLA 2006 Compliant</span>
-          </div>
+        <Text
+          variant="caption"
+          className="relative !text-[11px] !text-teal-100/50"
+        >
+          People & factory operations · Smart HRM
+        </Text>
+      </section>
+      <main className="flex min-h-dvh flex-col items-center justify-center px-6 py-10 sm:px-12">
+        <div className="mb-10 flex items-center gap-3 lg:hidden">
+          <BrandMark />
+          <Text className="!text-xl !font-semibold">
+            Smart HRM<span className="text-teal-700">.</span>
+          </Text>
         </div>
-      </header>
-
-      {/* Main Login Canvas - Pure White Executive Spectrum */}
-      <main className="flex-1 flex items-center justify-center p-3 sm:p-8 bg-slate-50/60">
-        <div className={`w-full ${authMode === "register" ? "max-w-lg" : "max-w-md"} bg-white border-2 border-slate-300 rounded-2xl shadow-xl shadow-slate-200/80 p-5 sm:p-8 transition-all`}>
-          
-          {/* Auth Mode Toggle Pill */}
-          <div className="flex p-1 bg-slate-100 rounded-xl mb-6 border border-slate-300">
+        <div
+          className={`w-full ${authMode === "register" ? "max-w-lg" : "max-w-[400px]"}`}
+        >
+          <div className="mb-8 flex gap-6 border-b border-slate-200">
             <button
               type="button"
               onClick={() => {
                 setAuthMode("login");
                 setErrorMessage(null);
               }}
-              className={`flex-1 py-2 rounded-lg text-xs font-black transition-all cursor-pointer ${
-                authMode === "login"
-                  ? "bg-white text-slate-950 shadow-xs border border-slate-300"
-                  : "text-slate-600 hover:text-slate-950"
-              }`}
+              className={`pb-3 text-sm font-medium border-b-2 ${authMode === "login" ? "border-teal-700 text-teal-800" : "border-transparent text-slate-400 hover:text-slate-600"}`}
             >
-              Sign In
+              Sign in
             </button>
             <button
               type="button"
@@ -338,50 +432,44 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
                 setAuthMode("register");
                 setErrorMessage(null);
               }}
-              className={`flex-1 py-2 rounded-lg text-xs font-black transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                authMode === "register"
-                  ? "bg-blue-600 text-white shadow-xs"
-                  : "text-slate-600 hover:text-slate-950"
-              }`}
+              className={`pb-3 text-sm font-medium border-b-2 ${authMode === "register" ? "border-teal-700 text-teal-800" : "border-transparent text-slate-400 hover:text-slate-600"}`}
             >
-              <UserPlus className="h-3.5 w-3.5" />
-              <span>Register User</span>
+              Create account
             </button>
           </div>
-
-          {/* Header Title & Badges */}
-          <div className="text-center mb-6">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-300 text-emerald-900 text-xs font-bold mb-2 shadow-2xs">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-600" />
-              {authMode === "login" ? "Corporate Single Sign-On (SSO)" : "Email Code Verification Required"}
-            </div>
-            <h2 className="text-xl sm:text-2xl font-black text-gray-700 tracking-tight">
-              {authMode === "login" ? "Sign In to Your Workspace" : "Create New User Account"}
-            </h2>
-            <p className="text-xs font-semibold text-slate-600 mt-1">
+          <div className="mb-8">
+            <Title
+              level={1}
+              className="!text-[28px] !font-semibold !tracking-tight"
+            >
               {authMode === "login"
-                ? "Enter your corporate credentials to access HR & Operations"
-                : "Verify your email with a 6-digit code to activate your account"}
-            </p>
+                ? "Welcome to your workspace"
+                : "Create your account"}
+            </Title>
+            <Text className="mt-3 !text-sm !text-slate-500">
+              {authMode === "login"
+                ? "Sign in to manage your workday, people and operations."
+                : "Verify your email to get started with Smart HRM."}
+            </Text>
           </div>
-
-          {/* Error Message Box */}
           {errorMessage && (
-            <div className="mb-5 p-3 bg-rose-50 border-2 border-rose-300 rounded-xl flex items-start gap-2.5 text-rose-950 text-xs font-bold animate-in fade-in">
-              <AlertCircle className="h-4 w-4 text-rose-700 shrink-0 mt-0.5" />
-              <span>{errorMessage}</span>
+            <div
+              role="alert"
+              className="mb-5 flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs leading-relaxed text-rose-700"
+            >
+              <AlertCircle className="mt-0.5 size-4 shrink-0" />
+              {errorMessage}
             </div>
           )}
-
           {authMode === "login" ? (
             /* --- SIGN IN FORM --- */
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label
                   htmlFor="identifier"
-                  className="block text-xs font-black uppercase tracking-wider text-slate-800 mb-1.5"
+                  className="block text-xs font-medium text-slate-600 mb-2"
                 >
-                  Employee ID / Corporate Email
+                  Employee ID or email
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
@@ -389,11 +477,12 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
                   </div>
                   <input
                     id="identifier"
+                    autoComplete="username"
                     type="text"
                     value={identifier}
                     onChange={(e) => setIdentifier(e.target.value)}
-                    placeholder="e.g. SMT-0001 or admin@smart.com"
-                    className="w-full pl-10 pr-4 py-2.5 text-sm font-bold bg-white text-slate-950 border-2 border-slate-300 rounded-xl placeholder:text-slate-500 placeholder:font-normal focus:outline-none focus:border-slate-950 focus:ring-1 focus:ring-slate-950 shadow-2xs transition-colors"
+                    placeholder="Your employee ID or email address"
+                    className="w-full pl-10 pr-4 py-2.5 text-sm font-medium bg-white text-slate-950 border border-slate-200 rounded-xl placeholder:text-slate-500 placeholder:font-normal focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600/10 shadow-2xs transition-colors"
                     required
                   />
                 </div>
@@ -402,7 +491,7 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
               <div>
                 <label
                   htmlFor="password"
-                  className="block text-xs font-black uppercase tracking-wider text-slate-800 mb-1.5"
+                  className="block text-xs font-medium text-slate-600 mb-2"
                 >
                   Password
                 </label>
@@ -412,11 +501,12 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
                   </div>
                   <input
                     id="password"
+                    autoComplete="current-password"
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Enter your security password"
-                    className="w-full pl-10 pr-11 py-2.5 text-sm font-bold bg-white text-slate-950 border-2 border-slate-300 rounded-xl placeholder:text-slate-500 placeholder:font-normal focus:outline-none focus:border-slate-950 focus:ring-1 focus:ring-slate-950 shadow-2xs transition-colors"
+                    placeholder="Enter your password"
+                    className="w-full pl-10 pr-11 py-2.5 text-sm font-medium bg-white text-slate-950 border border-slate-200 rounded-xl placeholder:text-slate-500 placeholder:font-normal focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600/10 shadow-2xs transition-colors"
                     required
                   />
                   <button
@@ -440,10 +530,10 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
                     type="checkbox"
                     checked={rememberMe}
                     onChange={(e) => setRememberMe(e.target.checked)}
-                    className="h-4 w-4 rounded border-2 border-slate-400 text-slate-950 focus:ring-slate-950 bg-white"
+                    className="h-4 w-4 rounded border-2 border-slate-400 text-slate-950 focus:ring-teal-600/10 bg-white"
                   />
-                  <span className="text-xs font-bold text-slate-800">
-                    Remember this workstation
+                  <span className="text-xs font-medium text-slate-800">
+                    Remember me
                   </span>
                 </label>
               </div>
@@ -451,7 +541,7 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full h-11 bg-slate-950 hover:bg-slate-850 text-white font-black text-sm rounded-xl shadow-md shadow-slate-950/20 flex items-center justify-center gap-2 transition-all duration-150 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
+                className="w-full h-11 bg-teal-700 hover:bg-teal-800 text-white font-semibold text-sm rounded-xl shadow-sm flex items-center justify-center gap-2 transition-all duration-150 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
               >
                 {isLoading ? (
                   <>
@@ -460,7 +550,7 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
                   </>
                 ) : (
                   <>
-                    <span>Sign In to ERP Portal</span>
+                    <span>Sign in to workspace</span>
                     <ArrowRight className="h-4 w-4 text-emerald-400" />
                   </>
                 )}
@@ -468,9 +558,15 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
             </form>
           ) : (
             /* --- USER REGISTRATION WITH EMAIL CODE FORM --- */
-            <form onSubmit={handleRegisterSubmit} className="space-y-3.5 text-xs">
+            <form
+              onSubmit={handleRegisterSubmit}
+              className="space-y-3.5 text-xs"
+            >
               <div>
-                <label className="block text-xs font-black uppercase tracking-wider text-slate-800 mb-1">
+                <label
+                  htmlFor="register-name"
+                  className="block text-xs font-medium text-slate-800 mb-1"
+                >
                   Full Name <span className="text-rose-600">*</span>
                 </label>
                 <div className="relative">
@@ -479,28 +575,31 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
                   </div>
                   <input
                     type="text"
+                    id="register-name"
+                    autoComplete="name"
                     value={regName}
                     onChange={(e) => setRegName(e.target.value)}
                     placeholder="e.g. Md. Tariqul Islam"
-                    className="w-full pl-9 pr-3 py-2 bg-white border-2 border-slate-300 rounded-xl text-xs font-bold text-slate-900 placeholder:text-slate-500 focus:outline-none focus:border-slate-950"
+                    className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-900 placeholder:text-slate-500 focus:outline-none focus:border-teal-600"
                     required
                   />
                 </div>
               </div>
 
               {/* Email & Code Verification Section */}
-              <div className="p-3 bg-slate-50 border-2 border-slate-300 rounded-xl space-y-2">
+              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="block text-xs font-black uppercase tracking-wider text-slate-800">
-                    Email &amp; 6-Digit Code <span className="text-rose-600">*</span>
+                  <label htmlFor="register-email" className="block text-xs font-medium text-slate-800">
+                    Email &amp; 6-Digit Code{" "}
+                    <span className="text-rose-600">*</span>
                   </label>
                   {regIsVerified ? (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">
                       <CheckCircle2 className="h-3 w-3 text-emerald-600" />
                       Verified
                     </span>
                   ) : (
-                    <span className="text-[10px] font-bold text-slate-500">
+                    <span className="text-[10px] font-medium text-slate-500">
                       Verification Required
                     </span>
                   )}
@@ -513,6 +612,8 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
                     </div>
                     <input
                       type="email"
+                      id="register-email"
+                      autoComplete="email"
                       value={regEmail}
                       onChange={(e) => {
                         setRegEmail(e.target.value);
@@ -525,7 +626,7 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
                       }}
                       disabled={regIsVerified}
                       placeholder="e.g. tariqul@smarterp.biz"
-                      className="w-full pl-9 pr-3 py-2 bg-white border-2 border-slate-300 rounded-xl text-xs font-bold text-slate-900 placeholder:text-slate-500 focus:outline-none focus:border-slate-950 disabled:bg-slate-100 disabled:text-slate-600"
+                      className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-900 placeholder:text-slate-500 focus:outline-none focus:border-teal-600 disabled:bg-slate-100 disabled:text-slate-600"
                       required
                     />
                   </div>
@@ -534,7 +635,7 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
                       type="button"
                       onClick={handleSendVerificationCode}
                       disabled={isSendingCode || !regEmail.trim()}
-                      className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black flex items-center justify-center gap-1 transition-colors cursor-pointer shrink-0 disabled:opacity-50"
+                      className="px-3 py-2 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-1 transition-colors cursor-pointer shrink-0 disabled:opacity-50"
                     >
                       {isSendingCode ? (
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -559,7 +660,7 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
                         setRegCode("");
                         setRegDevCode(null);
                       }}
-                      className="px-3 py-2 bg-white border-2 border-slate-300 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-100 cursor-pointer"
+                      className="px-3 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl text-xs font-medium hover:bg-slate-100 cursor-pointer"
                     >
                       Change
                     </button>
@@ -568,15 +669,20 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
 
                 {/* Dev Code Callout */}
                 {regDevCode && !regIsVerified && (
-                  <div className="p-2 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between text-[11px] text-blue-900 font-bold">
+                  <div className="p-2 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between text-[11px] text-blue-900 font-medium">
                     <div className="flex items-center gap-1.5">
                       <KeyRound className="h-3.5 w-3.5 text-blue-600" />
-                      <span>OTP Code: <strong className="font-mono text-xs text-blue-700 tracking-wider">{regDevCode}</strong></span>
+                      <span>
+                        OTP Code:{" "}
+                        <strong className="font-mono text-xs text-blue-700 tracking-wider">
+                          {regDevCode}
+                        </strong>
+                      </span>
                     </div>
                     <button
                       type="button"
                       onClick={() => setRegCode(regDevCode)}
-                      className="text-blue-700 underline text-[10px] font-black hover:text-blue-900 cursor-pointer"
+                      className="text-blue-700 underline text-[10px] font-semibold hover:text-blue-900 cursor-pointer"
                     >
                       Fill Code
                     </button>
@@ -589,16 +695,20 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
                     <input
                       type="text"
                       maxLength={6}
+                      aria-label="Email verification code"
+                      autoComplete="one-time-code"
                       placeholder="Enter 6-digit code"
                       value={regCode}
-                      onChange={(e) => setRegCode(e.target.value.replace(/[^0-9]/g, ""))}
-                      className="flex-1 px-3 py-2 bg-white border-2 border-slate-300 rounded-xl text-xs font-mono font-bold tracking-widest text-slate-900 placeholder:font-sans placeholder:tracking-normal placeholder:text-slate-500 focus:outline-none focus:border-slate-950"
+                      onChange={(e) =>
+                        setRegCode(e.target.value.replace(/[^0-9]/g, ""))
+                      }
+                      className="flex-1 px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-mono font-medium tracking-widest text-slate-900 placeholder:font-sans placeholder:tracking-normal placeholder:text-slate-500 focus:outline-none focus:border-teal-600"
                     />
                     <button
                       type="button"
                       onClick={handleVerifyCode}
                       disabled={isVerifyingCode || !regCode.trim()}
-                      className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black flex items-center justify-center gap-1 transition-colors cursor-pointer shrink-0 disabled:opacity-50"
+                      className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-1 transition-colors cursor-pointer shrink-0 disabled:opacity-50"
                     >
                       {isVerifyingCode ? (
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -615,7 +725,10 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
 
               {/* Password */}
               <div>
-                <label className="block text-xs font-black uppercase tracking-wider text-slate-800 mb-1">
+                <label
+                  htmlFor="register-password"
+                  className="block text-xs font-medium text-slate-800 mb-1"
+                >
                   Create Password <span className="text-rose-600">*</span>
                 </label>
                 <div className="relative">
@@ -624,18 +737,25 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
                   </div>
                   <input
                     type={showPassword ? "text" : "password"}
+                    id="register-password"
+                    autoComplete="new-password"
                     value={regPassword}
                     onChange={(e) => setRegPassword(e.target.value)}
                     placeholder="Minimum 6 characters"
-                    className="w-full pl-9 pr-10 py-2 bg-white border-2 border-slate-300 rounded-xl text-xs font-bold text-slate-900 placeholder:text-slate-500 focus:outline-none focus:border-slate-950"
+                    className="w-full pl-9 pr-10 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-900 placeholder:text-slate-500 focus:outline-none focus:border-teal-600"
                     required
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
+                    aria-label="Toggle password visibility"
                     className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-600 hover:text-slate-950"
                   >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
                   </button>
                 </div>
               </div>
@@ -643,13 +763,17 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
               {/* Department & Designation */}
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-xs font-black uppercase tracking-wider text-slate-800 mb-1">
+                  <label
+                    htmlFor="register-department"
+                    className="block text-xs font-medium text-slate-800 mb-1"
+                  >
                     Department
                   </label>
                   <select
+                    id="register-department"
                     value={regDepartment}
                     onChange={(e) => setRegDepartment(e.target.value)}
-                    className="w-full px-2.5 py-2 bg-white border-2 border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:border-slate-950"
+                    className="w-full px-2.5 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:border-teal-600"
                   >
                     {DEPARTMENTS.map((dept) => (
                       <option key={dept} value={dept}>
@@ -660,22 +784,30 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-black uppercase tracking-wider text-slate-800 mb-1">
+                  <label
+                    htmlFor="register-designation"
+                    className="block text-xs font-medium text-slate-800 mb-1"
+                  >
                     Designation
                   </label>
                   <input
                     type="text"
+                    id="register-designation"
+                    autoComplete="organization-title"
                     value={regDesignation}
                     onChange={(e) => setRegDesignation(e.target.value)}
                     placeholder="Job Title"
-                    className="w-full px-2.5 py-2 bg-white border-2 border-slate-300 rounded-xl text-xs font-bold text-slate-900 placeholder:text-slate-500 focus:outline-none focus:border-slate-950"
+                    className="w-full px-2.5 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-900 placeholder:text-slate-500 focus:outline-none focus:border-teal-600"
                   />
                 </div>
               </div>
 
               {/* Mobile Phone */}
               <div>
-                <label className="block text-xs font-black uppercase tracking-wider text-slate-800 mb-1">
+                <label
+                  htmlFor="register-phone"
+                  className="block text-xs font-medium text-slate-800 mb-1"
+                >
                   Mobile Number
                 </label>
                 <div className="relative">
@@ -684,10 +816,12 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
                   </div>
                   <input
                     type="tel"
+                    id="register-phone"
+                    autoComplete="tel"
                     value={regPhone}
                     onChange={(e) => setRegPhone(e.target.value)}
                     placeholder="e.g. 01712000000"
-                    className="w-full pl-9 pr-3 py-2 bg-white border-2 border-slate-300 rounded-xl text-xs font-bold text-slate-900 placeholder:text-slate-500 focus:outline-none focus:border-slate-950"
+                    className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-900 placeholder:text-slate-500 focus:outline-none focus:border-teal-600"
                   />
                 </div>
               </div>
@@ -696,7 +830,7 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
               <button
                 type="submit"
                 disabled={isRegistering || !regCode.trim()}
-                className="w-full h-11 mt-2 bg-blue-600 hover:bg-blue-700 text-white font-black text-sm rounded-xl shadow-md shadow-blue-600/30 flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full h-11 mt-2 bg-teal-700 hover:bg-teal-800 text-white font-semibold text-sm rounded-xl shadow-sm flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {isRegistering ? (
                   <>
@@ -714,76 +848,69 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
           )}
 
           {/* Quick Persona Demo Selector (shown only on Sign In) */}
-          {authMode === "login" && (
-            <div className="mt-8 pt-6 border-t border-slate-200">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-xs font-black uppercase tracking-wider text-slate-800">
-                  1-Click Persona Previews
-                </span>
-                <span className="text-[10px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md">
-                  Fast Sign-In
-                </span>
-              </div>
+          {authMode === "login" &&
+            process.env.NEXT_PUBLIC_ENABLE_DEMO_PREVIEWS === "true" && (
+              <div className="mt-8 pt-6 border-t border-slate-200">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs font-medium text-slate-800">
+                    Preview accounts
+                  </span>
+                  <span className="text-[10px] font-medium text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md">
+                    Demo mode
+                  </span>
+                </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {PERSONA_PRESETS.map((p) => {
-                  const isSelected = identifier === p.fullId;
-                  return (
-                    <button
-                      key={p.fullId}
-                      type="button"
-                      onClick={() => handlePersonaSelect(p)}
-                      className={`text-left p-2.5 rounded-xl border-2 transition-all flex items-center justify-between gap-2 cursor-pointer ${
-                        isSelected
-                          ? "bg-slate-900 border-slate-900 text-white shadow-sm"
-                          : "bg-white border-slate-300 text-slate-900 hover:border-slate-400 hover:bg-slate-50"
-                      }`}
-                    >
-                      <div className="min-w-0">
-                        <p
-                          className={`text-xs font-extrabold truncate ${
-                            isSelected ? "text-white" : "text-slate-950"
-                          }`}
-                        >
-                          {p.name}
-                        </p>
-                        <p
-                          className={`text-[10px] font-mono font-semibold ${
-                            isSelected ? "text-slate-300" : "text-slate-600"
-                          }`}
-                        >
-                          {p.fullId} &bull; {p.department}
-                        </p>
-                      </div>
-                      {isSelected && (
-                        <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
-                      )}
-                    </button>
-                  );
-                })}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {PERSONA_PRESETS.map((p) => {
+                    const isSelected = identifier === p.fullId;
+                    return (
+                      <button
+                        key={p.fullId}
+                        type="button"
+                        onClick={() => handlePersonaSelect(p)}
+                        className={`text-left p-2.5 rounded-xl border-2 transition-all flex items-center justify-between gap-2 cursor-pointer ${
+                          isSelected
+                            ? "bg-slate-900 border-slate-900 text-white shadow-sm"
+                            : "bg-white border-slate-300 text-slate-900 hover:border-slate-400 hover:bg-slate-50"
+                        }`}
+                      >
+                        <div className="min-w-0">
+                          <Text
+                            className={`text-xs font-semibold truncate ${
+                              isSelected ? "text-white" : "text-slate-950"
+                            }`}
+                          >
+                            {p.name}
+                          </Text>
+                          <Text
+                            className={`text-[10px] font-mono font-semibold ${
+                              isSelected ? "text-slate-300" : "text-slate-600"
+                            }`}
+                          >
+                            {p.fullId} &bull; {p.department}
+                          </Text>
+                        </div>
+                        {isSelected && (
+                          <CheckCircle2 className="h-4 w-4 text-emerald-400 shrink-0" />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          <Text
+            variant="caption"
+            className="mt-8 border-t border-slate-100 pt-5 !text-center !text-[11px] !text-slate-400"
+          >
+            Need access? Contact your HR administrator.
+          </Text>
         </div>
       </main>
 
-      {/* Corporate Footer */}
-      <footer className="h-12 border-t border-slate-300 px-6 sm:px-12 flex items-center justify-between text-xs font-semibold text-slate-700 bg-white">
-        <div className="flex items-center gap-2">
-          <span>&copy; 2026 Smart Technologies (BD) Ltd. All Rights Reserved.</span>
-        </div>
-        <div className="flex items-center gap-4">
-          <span className="flex items-center gap-1 text-slate-800 font-bold">
-            <Clock className="h-3.5 w-3.5 text-slate-700" />
-            Biometric Sync Ready
-          </span>
-          <span className="hidden sm:inline text-slate-300">|</span>
-          <span className="hidden sm:flex items-center gap-1 text-slate-800 font-bold">
-            <Laptop className="h-3.5 w-3.5 text-slate-700" />
-            Enterprise Edition v3.4
-          </span>
-        </div>
-      </footer>
+      <div className="sr-only" aria-hidden="true">
+        Smart HRM workspace
+      </div>
     </div>
   );
 }

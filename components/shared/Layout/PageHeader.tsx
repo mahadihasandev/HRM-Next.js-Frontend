@@ -3,8 +3,10 @@ import { Title } from "../Typography/Title";
 import { Subtitle } from "../Typography/Subtitle";
 import { cn } from "@/lib/utils";
 
-export interface PageHeaderProps
-  extends Omit<React.HTMLAttributes<HTMLDivElement>, "title"> {
+export interface PageHeaderProps extends Omit<
+  React.HTMLAttributes<HTMLDivElement>,
+  "title"
+> {
   title: React.ReactNode;
   subtitle?: React.ReactNode;
   action?: React.ReactNode;
@@ -24,8 +26,8 @@ export function PageHeader({
   return (
     <div
       className={cn(
-        "flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pb-4 sm:pb-6 mb-4 sm:mb-6 border-b border-slate-200 dark:border-slate-800",
-        className
+        "flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pb-2 mb-6",
+        className,
       )}
       {...props}
     >
@@ -34,17 +36,25 @@ export function PageHeader({
           <Title
             level={1}
             className={cn(
-              "text-xl sm:text-2xl lg:text-3xl font-semibold tracking-tight",
-              titleClassName || "text-slate-900 dark:text-slate-100"
+              "text-xl sm:text-2xl lg:text-[28px] font-semibold tracking-tight",
+              titleClassName || "text-slate-900 dark:text-slate-100",
             )}
           >
             {title}
           </Title>
           {badge && <div className="shrink-0">{badge}</div>}
         </div>
-        {subtitle && <Subtitle className="text-xs sm:text-sm text-slate-500 font-normal">{subtitle}</Subtitle>}
+        {subtitle && (
+          <Subtitle className="text-xs sm:text-sm text-slate-500 font-normal">
+            {subtitle}
+          </Subtitle>
+        )}
       </div>
-      {action && <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap shrink-0">{action}</div>}
+      {action && (
+        <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap shrink-0">
+          {action}
+        </div>
+      )}
     </div>
   );
 }

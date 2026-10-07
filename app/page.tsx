@@ -2,7 +2,12 @@
 
 import { API_BASE_URL } from "@/lib/api/config";
 
-import React, { useState, useEffect, useCallback, useSyncExternalStore } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useSyncExternalStore,
+} from "react";
 import { Sidebar, NavTab } from "@/components/layout/Sidebar";
 import { TopNavbar, PERSONA_PRESETS } from "@/components/layout/TopNavbar";
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
@@ -49,20 +54,25 @@ function useIsClient() {
   return useSyncExternalStore(
     emptySubscribe,
     () => true,
-    () => false
+    () => false,
   );
 }
 
 export default function AppHome() {
   const dispatch = useAppDispatch();
-  const { user: authUser, token: authToken } = useAppSelector((state) => state.auth);
+  const { user: authUser, token: authToken } = useAppSelector(
+    (state) => state.auth,
+  );
   const isMounted = useIsClient();
   const [activeTab, setActiveTab] = useState<NavTab>("dashboard");
-  const [activeSubOption, setActiveSubOption] = useState<string | undefined>(undefined);
+  const [activeSubOption, setActiveSubOption] = useState<string | undefined>(
+    undefined,
+  );
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isPermissionsOpen, setIsPermissionsOpen] = useState(false);
-  const [switchedPersona, setSwitchedPersona] = useState<ActiveEmployeeState | null>(null);
+  const [switchedPersona, setSwitchedPersona] =
+    useState<ActiveEmployeeState | null>(null);
   const [permissions, setPermissions] = useState<Record<string, boolean>>({});
   const [activeToken, setActiveToken] = useState("");
   const [todayAttendance, setTodayAttendance] = useState<{
@@ -110,7 +120,9 @@ export default function AppHome() {
         fullId.toLowerCase() === "admin"
           ? "SMT-0001"
           : fullId;
-      const res = await fetch(`${API_BASE_URL}/hrm/permissions/employee/${canonicalId}`);
+      const res = await fetch(
+        `${API_BASE_URL}/hrm/permissions/employee/${canonicalId}`,
+      );
       if (!res.ok) return;
       const data: EmployeePermissionProfile = await res.json();
       if (data?.effective_permissions) {
@@ -130,7 +142,7 @@ export default function AppHome() {
           ? "SMT-0001"
           : fullId;
       const res = await fetch(
-        `${API_BASE_URL}/hrm/check-today-attendance?employee_full_id=${canonicalId}`
+        `${API_BASE_URL}/hrm/check-today-attendance?employee_full_id=${canonicalId}`,
       );
       if (!res.ok) return;
       const json = await res.json();
@@ -163,7 +175,9 @@ export default function AppHome() {
       try {
         const [permRes, attRes] = await Promise.allSettled([
           fetch(`${API_BASE_URL}/hrm/permissions/employee/${canonicalId}`),
-          fetch(`${API_BASE_URL}/hrm/check-today-attendance?employee_full_id=${canonicalId}`),
+          fetch(
+            `${API_BASE_URL}/hrm/check-today-attendance?employee_full_id=${canonicalId}`,
+          ),
         ]);
 
         if (!ignore && permRes.status === "fulfilled" && permRes.value.ok) {
@@ -198,7 +212,11 @@ export default function AppHome() {
   }, [authUser, currentEmployee.fullId]);
 
   const handlePunchIn = async () => {
-    const nowTime = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: true });
+    const nowTime = new Date().toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
     const reqHeaders: Record<string, string> = {
       "Content-Type": "application/json",
       Accept: "application/json",
@@ -235,9 +253,14 @@ export default function AppHome() {
           hasPunchedIn: true,
           inTime: json.data?.in_time || nowTime,
         }));
-        toast.success(json.message || `Successfully Punched In at ${json.data?.in_time || nowTime}`);
+        toast.success(
+          json.message ||
+            `Successfully Punched In at ${json.data?.in_time || nowTime}`,
+        );
       } else {
-        toast.error(json.message || "An employee can only punch in once per day.");
+        toast.error(
+          json.message || "An employee can only punch in once per day.",
+        );
       }
     } catch (err: unknown) {
       console.error("Punch In failed", err);
@@ -246,7 +269,11 @@ export default function AppHome() {
   };
 
   const handlePunchOut = async () => {
-    const nowTime = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: true });
+    const nowTime = new Date().toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
     const reqHeaders: Record<string, string> = {
       "Content-Type": "application/json",
       Accept: "application/json",
@@ -282,9 +309,14 @@ export default function AppHome() {
           workingHours: json.data?.working_hours || null,
           overtimeHours: json.data?.overtime_hours || null,
         }));
-        toast.success(json.message || `Punch Out recorded at ${json.data?.out_time || nowTime}`);
+        toast.success(
+          json.message ||
+            `Punch Out recorded at ${json.data?.out_time || nowTime}`,
+        );
       } else {
-        toast.error(json.message || "You must punch in first before punching out.");
+        toast.error(
+          json.message || "You must punch in first before punching out.",
+        );
       }
     } catch (err: unknown) {
       console.error("Punch Out failed", err);
@@ -313,7 +345,7 @@ export default function AppHome() {
           email: `${emp.name.toLowerCase().replace(/[^a-z]/g, "")}@smarterp.biz`,
         },
         token: effectiveToken,
-      })
+      }),
     );
     // Fetch fresh permissions for the switched persona
     void fetchPermissions(emp.fullId);
@@ -338,11 +370,14 @@ export default function AppHome() {
   };
 
   const isCurrentAdmin =
-    currentEmployee.department === "Administration" || currentEmployee.fullId === "SMT-0001";
+    currentEmployee.department === "Administration" ||
+    currentEmployee.fullId === "SMT-0001";
 
   const handleQuickGrant = async (moduleKey: string) => {
     if (!isCurrentAdmin) {
-      toast.error("Access Denied: Only Admin-level accounts can grant permissions.");
+      toast.error(
+        "Access Denied: Only Admin-level accounts can grant permissions.",
+      );
       return;
     }
     setIsGrantingQuick(true);
@@ -363,13 +398,15 @@ export default function AppHome() {
             operator_id: currentEmployee.fullId,
             granted_by: currentEmployee.name,
           }),
-        }
+        },
       );
       if (res.ok) {
         await fetchPermissions(currentEmployee.fullId);
         toast.success(`Access granted for ${moduleKey.replace("module.", "")}`);
       } else if (res.status === 403) {
-        toast.error("Access Denied: Only Admin-level accounts can modify permissions.");
+        toast.error(
+          "Access Denied: Only Admin-level accounts can modify permissions.",
+        );
       }
     } catch (err) {
       console.error("Error granting module access", err);
@@ -388,8 +425,8 @@ export default function AppHome() {
       currentEmployee.department === "Product Design"
         ? "Lead UI/UX Architect"
         : currentEmployee.department === "Engineering"
-        ? "Principal Backend Engineer"
-        : "Senior Field Sales Manager",
+          ? "Principal Backend Engineer"
+          : "Senior Field Sales Manager",
     department: currentEmployee.department,
     company: "Smart Technologies (BD) Ltd.",
     email: `${currentEmployee.name.toLowerCase().replace(/[^a-z]/g, "")}@smarterp.biz`,
@@ -407,7 +444,9 @@ export default function AppHome() {
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <div className="h-8 w-8 border-3 border-slate-900 border-t-transparent rounded-full animate-spin" />
-          <p className="text-xs font-bold text-slate-700 tracking-wider uppercase">Loading Workspace...</p>
+          <p className="text-xs font-bold text-slate-700 tracking-wider uppercase">
+            Loading Workspace...
+          </p>
         </div>
       </div>
     );
@@ -426,7 +465,7 @@ export default function AppHome() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f4f6fa] flex flex-row overflow-x-clip relative">
+    <div className="hrm-app min-h-screen bg-[#f5f7f9] flex flex-row overflow-x-clip relative">
       {/* High Contrast Enterprise Navy Sidebar with Granular RBAC */}
       <Sidebar
         activeTab={activeTab}
@@ -434,15 +473,17 @@ export default function AppHome() {
         onTabChange={handleTabChange}
         employeeId={currentEmployee.fullId}
         employeeName={currentEmployee.name}
+        department={currentEmployee.department}
         permissions={permissions}
         isOpen={isMobileSidebarOpen}
         onClose={() => setIsMobileSidebarOpen(false)}
       />
 
       {/* Main Workspace Area */}
-      <div className="flex-1 flex flex-col min-w-0 bg-[#f4f6fa]">
+      <div className="flex-1 flex flex-col min-w-0">
         {/* Sticky Top Navbar */}
         <TopNavbar
+          activeTab={activeTab}
           onOpenSettings={() => setIsSettingsOpen(true)}
           activeToken={effectiveToken}
           employeeFullId={currentEmployee.fullId}
@@ -461,7 +502,7 @@ export default function AppHome() {
         />
 
         {/* Viewport Content */}
-        <main className="flex-1 p-3 sm:p-5 md:p-8 max-w-7xl w-full mx-auto pb-24 lg:pb-8 min-w-0">
+        <main className="hrm-content flex-1 p-4 sm:p-6 xl:p-8 max-w-[1480px] w-full mx-auto pb-28 lg:pb-10 min-w-0">
           {/* Access Control Guard Screen */}
           {!canAccessActiveTab ? (
             <div className="py-8 sm:py-12 flex justify-center animate-in fade-in duration-200">
@@ -481,30 +522,45 @@ export default function AppHome() {
                   </Badge>
                 </div>
                 <p className="text-sm text-slate-700 font-medium max-w-md mx-auto mt-2 leading-relaxed">
-                  Employees in <span className="font-black text-slate-950">{currentEmployee.department}</span>{" "}
+                  Employees in{" "}
+                  <span className="font-black text-slate-950">
+                    {currentEmployee.department}
+                  </span>{" "}
                   (such as {currentEmployee.name}) do not have default access to{" "}
                   <span className="font-black text-slate-950">
                     {activeTab === "snd"
                       ? "SND Distribution (Dealer & Sales Network)"
                       : activeTab === "sfm"
-                      ? "SFM Field Force (SR Targets & Visits)"
-                      : activeTab.toUpperCase()}
+                        ? "SFM Field Force (SR Targets & Visits)"
+                        : activeTab.toUpperCase()}
                   </span>
                   .
                 </p>
 
                 <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 mt-6 text-xs text-slate-800 text-left space-y-1">
                   <div className="flex items-center justify-between">
-                    <span className="text-slate-500 font-semibold">Active Persona:</span>
-                    <span className="font-bold">{currentEmployee.name} ({currentEmployee.fullId})</span>
+                    <span className="text-slate-500 font-semibold">
+                      Active Persona:
+                    </span>
+                    <span className="font-bold">
+                      {currentEmployee.name} ({currentEmployee.fullId})
+                    </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-slate-500 font-semibold">Department Policy:</span>
-                    <span className="font-bold text-rose-700">Restricted (No Access)</span>
+                    <span className="text-slate-500 font-semibold">
+                      Department Policy:
+                    </span>
+                    <span className="font-bold text-rose-700">
+                      Restricted (No Access)
+                    </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-slate-500 font-semibold">Custom Admin Override:</span>
-                    <span className="font-bold text-slate-700">Not Granted</span>
+                    <span className="text-slate-500 font-semibold">
+                      Custom Admin Override:
+                    </span>
+                    <span className="font-bold text-slate-700">
+                      Not Granted
+                    </span>
                   </div>
                 </div>
 
@@ -533,7 +589,9 @@ export default function AppHome() {
                     <Button
                       size="sm"
                       onClick={() => handleSwitchEmployee(PERSONA_PRESETS[0])}
-                      leftIcon={<UserCheck className="h-4 w-4 text-emerald-400" />}
+                      leftIcon={
+                        <UserCheck className="h-4 w-4 text-emerald-400" />
+                      }
                       className="bg-slate-900 hover:bg-slate-800 text-white font-black shadow-md shadow-slate-900/20 w-full sm:w-auto"
                     >
                       Switch to System Admin to Grant
@@ -629,13 +687,22 @@ export default function AppHome() {
 
               {activeTab === "salary" && (
                 <SalaryPayrollView
-                  canManagePayroll={Boolean(permissions["action.salary.disburse"])}
+                  canManagePayroll={Boolean(
+                    permissions["action.salary.disburse"],
+                  )}
                   currentOperator={currentEmployee}
                   isAdmin={isCurrentAdmin}
                 />
               )}
 
-              {activeTab === "factory" && <FactoryOperationsView canManage={isCurrentAdmin || Boolean(permissions["action.employees.edit"])} />}
+              {activeTab === "factory" && (
+                <FactoryOperationsView
+                  canManage={
+                    isCurrentAdmin ||
+                    Boolean(permissions["action.employees.edit"])
+                  }
+                />
+              )}
 
               {activeTab === "accounting" && (
                 <AccountingView
@@ -653,15 +720,15 @@ export default function AppHome() {
                     activeTab === "shifts"
                       ? "shifts"
                       : activeTab === "outwork"
-                      ? "outwork"
-                      : activeSubOption === "short-leave" ||
-                        activeSubOption === "late-iom" ||
-                        activeSubOption === "shifts" ||
-                        activeSubOption === "outwork" ||
-                        activeSubOption === "daily-work" ||
-                        activeSubOption === "trainings"
-                      ? activeSubOption
-                      : "short-leave"
+                        ? "outwork"
+                        : activeSubOption === "short-leave" ||
+                            activeSubOption === "late-iom" ||
+                            activeSubOption === "shifts" ||
+                            activeSubOption === "outwork" ||
+                            activeSubOption === "daily-work" ||
+                            activeSubOption === "trainings"
+                          ? activeSubOption
+                          : "short-leave"
                   }
                 />
               )}
@@ -701,7 +768,9 @@ export default function AppHome() {
           handleSwitchEmployee(PERSONA_PRESETS[0]);
         }}
         onPermissionsUpdated={(updatedProfile) => {
-          if (updatedProfile.employee.employee_full_id === currentEmployee.fullId) {
+          if (
+            updatedProfile.employee.employee_full_id === currentEmployee.fullId
+          ) {
             setPermissions(updatedProfile.effective_permissions || {});
           }
         }}

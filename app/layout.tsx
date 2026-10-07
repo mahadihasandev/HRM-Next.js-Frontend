@@ -11,7 +11,7 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: "HRM Platform - Enterprise Human Resource Management",
-  description: "Next.js & Laravel 13 Powered High-Performance HRM Suite",
+  description: "People, payroll and factory operations in one HR workspace.",
 };
 
 export const viewport: Viewport = {
@@ -19,7 +19,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 5,
   userScalable: true,
-  themeColor: "#0b1329",
+  themeColor: "#0f766e",
 };
 
 export default function RootLayout({

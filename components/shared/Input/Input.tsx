@@ -1,8 +1,7 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 
-export interface InputProps
-  extends React.InputHTMLAttributes<HTMLInputElement> {
+export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   error?: string;
   helperText?: string;
@@ -23,16 +22,17 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
       id,
       ...props
     },
-    ref
+    ref,
   ) => {
-    const inputId = id || (label ? label.toLowerCase().replace(/\s+/g, "-") : undefined);
+    const inputId =
+      id || (label ? label.toLowerCase().replace(/\s+/g, "-") : undefined);
 
     return (
       <div className="w-full space-y-1.5">
         {label && (
           <label
             htmlFor={inputId}
-            className="block text-xs font-bold text-slate-900"
+            className="block text-xs font-medium text-slate-700"
           >
             {label}
           </label>
@@ -51,8 +51,9 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
               "flex h-10 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-900 placeholder:text-slate-500 placeholder:font-normal focus:outline-none focus:border-teal-600 focus:ring-2 focus:ring-teal-600/10 disabled:cursor-not-allowed disabled:opacity-50 transition-colors shadow-none",
               leftIcon && "pl-9",
               rightIcon && "pr-9",
-              error && "border-red-600 focus:border-red-600 focus:ring-red-600/20",
-              className
+              error &&
+                "border-red-600 focus:border-red-600 focus:ring-red-600/20",
+              className,
             )}
             {...props}
           />
@@ -62,19 +63,13 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
             </div>
           )}
         </div>
-        {error && (
-          <p className="text-xs text-red-600 font-medium">
-            {error}
-          </p>
-        )}
+        {error && <p className="text-xs text-red-600 font-medium">{error}</p>}
         {!error && helperText && (
-          <p className="text-xs text-slate-700 font-medium">
-            {helperText}
-          </p>
+          <p className="text-xs text-slate-700 font-medium">{helperText}</p>
         )}
       </div>
     );
-  }
+  },
 );
 
 Input.displayName = "Input";

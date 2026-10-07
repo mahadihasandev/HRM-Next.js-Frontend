@@ -1,29 +1,32 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import {
-  Users,
+  ArrowRight,
+  ArrowUpRight,
+  Banknote,
   CalendarCheck,
   CalendarRange,
-  Banknote,
-  Clock,
-  ArrowUpRight,
-  MapPin,
-  Sparkles,
   CheckCircle2,
+  ClipboardCheck,
+  Clock3,
+  Factory,
   FileText,
-  Calendar,
   LogOut,
+  RefreshCw,
+  Users,
 } from "lucide-react";
 import {
-  CardWrapper,
-  Button,
   Badge,
+  Banner,
+  Button,
+  CardWrapper,
   PageHeader,
   StatCard,
-  Banner,
+  Text,
+  Title,
 } from "@/components/shared";
-import { NavTab } from "@/components/layout/Sidebar";
+import { type NavTab } from "@/components/layout/Sidebar";
 import { useGetDashboardMetricsQuery } from "@/store/services/dashboard";
 import { usePostMobilePunchMutation } from "@/store/services/attendance";
 import { DashboardPieChart } from "./DashboardPieChart";
@@ -44,554 +47,412 @@ interface DashboardViewProps {
   employeeName?: string;
   employeeFullId?: string;
 }
-
+const shortcuts: {
+  title: string;
+  detail: string;
+  tab: NavTab;
+  icon: typeof Users;
+}[] = [
+  {
+    title: "Employees",
+    detail: "People & profiles",
+    tab: "employees",
+    icon: Users,
+  },
+  {
+    title: "Payroll",
+    detail: "Salary & bank letters",
+    tab: "salary",
+    icon: Banknote,
+  },
+  {
+    title: "Factory",
+    detail: "Lines & production",
+    tab: "factory",
+    icon: Factory,
+  },
+  {
+    title: "Leave",
+    detail: "Apply & review",
+    tab: "leave",
+    icon: CalendarRange,
+  },
+];
 export function DashboardView({
   onNavigate,
   isPunchedIn = false,
   onQuickPunch,
   hasPunchedIn = false,
-  inTime = null,
-  lastOutTime = null,
-  workingHours = null,
-  overtimeHours = null,
+  inTime,
+  lastOutTime,
+  workingHours,
+  overtimeHours,
   onPunchIn,
   onPunchOut,
-  employeeName = "Abdul Halim",
-  employeeFullId = "SMT-0051",
+  employeeName = "",
+  employeeFullId = "",
 }: DashboardViewProps) {
-  const { data: metricsResp } = useGetDashboardMetricsQuery();
-  const [postMobilePunch, { isLoading: isPunching }] = usePostMobilePunchMutation();
+  const {
+    data: response,
+    isLoading,
+    error,
+    refetch,
+    isFetching,
+  } = useGetDashboardMetricsQuery();
+  const [postMobilePunch, { isLoading: isPunching }] =
+    usePostMobilePunchMutation();
   const [showAllAttendanceModal, setShowAllAttendanceModal] = useState(false);
-  const [punchFeedback, setPunchFeedback] = useState<{
+  const [feedback, setFeedback] = useState<{
     variant: "success" | "danger";
-    title: string;
     message: string;
   } | null>(null);
-
-  const metrics = metricsResp?.data;
-
-  const handlePunchClick = async () => {
-    onQuickPunch?.();
-
+  const metrics = response?.data;
+  const pending = metrics?.pending_tasks;
+  const leaveCount =
+    pending?.leave_recommendations ?? metrics?.pending_leave_requests;
+  const approvals = metrics
+    ? (leaveCount || 0) +
+      (pending?.loan_applications || 0) +
+      (pending?.short_leaves || 0)
+    : undefined;
+  const placeholder = isLoading ? "…" : "—";
+  const today = new Date().toLocaleDateString("en-GB", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    timeZone: "Asia/Dhaka",
+  });
+  async function fallbackPunch() {
     try {
       await postMobilePunch({
         latitude: 23.8058,
         longitude: 90.3533,
         note: isPunchedIn ? "Clock out" : "Clock in",
       }).unwrap();
-
-      setPunchFeedback({
-        variant: "success",
-        title: isPunchedIn ? "Clocked Out" : "Clocked In",
-        message: isPunchedIn
-          ? "You have clocked out for the day. Biometric sync updated in central ZKTeco database."
-          : "Biometric geo-attendance recorded at Dhaka Corporate HQ. Shift: General (09:00 - 18:00).",
-      });
-    } catch (err: unknown) {
       onQuickPunch?.();
-      const errMsg =
-        err && typeof err === "object" && "data" in err && (err as { data?: { message?: string } }).data?.message
-          ? (err as { data: { message: string } }).data.message
-          : err instanceof Error
-          ? err.message
-          : "Server failed to verify punch event";
-
-      setPunchFeedback({
+      setFeedback({
+        variant: "success",
+        message: "Your attendance has been recorded.",
+      });
+    } catch {
+      setFeedback({
         variant: "danger",
-        title: "Punch Verification Failed",
-        message: `Could not verify attendance punch: ${errMsg}. Punch status was restored.`,
+        message: "Attendance could not be recorded. Please try again.",
       });
     }
-
-    setTimeout(() => setPunchFeedback(null), 5000);
-  };
-
+  }
+  const reviewRows = [
+    {
+      title: "Leave requests",
+      detail: "Review employee applications",
+      count: leaveCount,
+      tab: "leave" as NavTab,
+      icon: CalendarRange,
+      color: "bg-teal-50 text-teal-700",
+    },
+    {
+      title: "Loans & advances",
+      detail: "Review submitted applications",
+      count: pending?.loan_applications,
+      tab: "loans" as NavTab,
+      icon: Banknote,
+      color: "bg-indigo-50 text-indigo-600",
+    },
+    {
+      title: "Short leave & IOM",
+      detail: "Movement and attendance requests",
+      count: pending?.short_leaves,
+      tab: "requests" as NavTab,
+      icon: FileText,
+      color: "bg-amber-50 text-amber-700",
+    },
+  ];
   return (
     <div className="space-y-6">
-      {/* Header Banner */}
       <PageHeader
-        title={
-          <span className="text-slate-800 dark:text-slate-800 font-extrabold tracking-tight">
-            Welcome back, {employeeName}
-          </span>
-        }
-        subtitle={`Smart Technologies (BD) Ltd. • Corporate HQ, Dhaka • ID: ${employeeFullId} • Saturday, 05 Oct 2026`}
-        badge={
-          <Badge variant="success" className="gap-1.5 font-bold">
-            <span className="h-2 w-2 rounded-full bg-emerald-600 animate-pulse" />
-            ZKTeco BioSync: Active
-          </Badge>
-        }
+        title="People overview"
+        subtitle="Your workforce, daily attendance and priorities in one place."
         action={
-          <div className="flex items-center gap-2 flex-wrap">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowAllAttendanceModal(true)}
-              leftIcon={<Users className="h-3.5 w-3.5 text-emerald-700" />}
-              className="border-slate-300 font-bold text-slate-800 hover:bg-slate-50"
-            >
-              All Staff Today Attendance
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onNavigate("attendance")}
-              leftIcon={<MapPin className="h-3.5 w-3.5 text-blue-700" />}
-              className="border-slate-300 font-semibold text-slate-800"
-            >
-              GPS Clock In
-            </Button>
-            <Button
-              size="sm"
-              onClick={() => onNavigate("leave")}
-              leftIcon={<CalendarRange className="h-3.5 w-3.5" />}
-              className="bg-slate-900 hover:bg-slate-800 text-white font-bold shadow-sm shadow-slate-900/20"
-            >
-              Apply Leave
-            </Button>
-          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowAllAttendanceModal(true)}
+            leftIcon={<CalendarCheck className="size-4" />}
+          >
+            Attendance register
+          </Button>
         }
       />
-
-      {punchFeedback && (
+      <section className="relative overflow-hidden rounded-2xl bg-[#123f40] px-6 py-6 text-white sm:px-8 sm:py-7">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -right-8 -top-32 size-96 rounded-full border-[50px] border-teal-300/5"
+        />
+        <div className="relative flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
+          <div>
+            <Text
+              variant="caption"
+              className="!text-[10px] !font-medium !tracking-[.14em] !text-teal-200/80"
+            >
+              {today.toUpperCase()}
+            </Text>
+            <Title
+              level={2}
+              className="mt-2 !text-2xl !font-medium !text-white sm:!text-[28px]"
+            >
+              Welcome back, {employeeName.split(" ")[0] || "colleague"}
+              <span className="text-teal-300">.</span>
+            </Title>
+            <Text className="mt-2 max-w-xl !text-sm !text-teal-100/80">
+              Keep people connected and your factory moving. Start with what
+              needs your attention today.
+            </Text>
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => onNavigate("leave")}
+            className="!border-white/20 !bg-white/10 !text-white hover:!bg-white/20"
+            rightIcon={<ArrowUpRight className="size-4" />}
+          >
+            Apply for leave
+          </Button>
+        </div>
+      </section>
+      {error && (
         <Banner
-          variant={punchFeedback.variant}
-          title={punchFeedback.title}
-          description={punchFeedback.message}
-          isDismissible
-          onClose={() => setPunchFeedback(null)}
+          variant="danger"
+          title="Overview could not load"
+          description="Check your connection and try refreshing the dashboard."
+          action={
+            <Button variant="outline" size="sm" onClick={() => refetch()}>
+              Try again
+            </Button>
+          }
         />
       )}
-
-      {/* Top Metric KPI Cards with High Contrast */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        <StatCard
-          title="Total Workforce"
-          value={metrics?.total_employees ?? 68}
-          subtitle="5 Operational Divisions &bull; BLA Compliant"
-          variant="slate"
-          icon={<Users className="h-5 w-5" />}
-          trend={{ value: "68 Confirmed", isPositive: true }}
+      {feedback && (
+        <Banner
+          variant={feedback.variant}
+          title={feedback.message}
+          isDismissible
+          onClose={() => setFeedback(null)}
         />
-
+      )}
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         <StatCard
-          title="Today's Attendance"
-          value={`${metrics?.present_today ?? 60} / ${metrics?.total_employees ?? 68}`}
-          subtitle={`${metrics?.late_today ?? 3} Late arrivals &bull; Click to inspect`}
+          title="Total workforce"
+          value={metrics?.total_employees ?? placeholder}
+          subtitle="Employees in the directory"
+          icon={<Users className="size-[18px]" />}
           variant="emerald"
-          icon={<CalendarCheck className="h-5 w-5" />}
-          trend={{ value: metrics?.attendance_rate ?? "88.2%", isPositive: true }}
-          onClick={() => setShowAllAttendanceModal(true)}
-          className="cursor-pointer hover:border-emerald-500 transition-all hover:shadow-md"
         />
-
         <StatCard
-          title="Pending Approvals"
-          value={`${(metrics?.pending_tasks?.leave_recommendations ?? 12) + (metrics?.pending_tasks?.loan_applications ?? 8) + (metrics?.pending_tasks?.short_leaves ?? 5)} Tasks`}
-          subtitle={`${metrics?.pending_tasks?.leave_recommendations ?? 12} Leaves, ${metrics?.pending_tasks?.loan_applications ?? 8} Loans`}
-          variant="amber"
-          icon={<Clock className="h-5 w-5" />}
-          trend={{ value: "Action Required", isPositive: false }}
+          title="Present today"
+          value={metrics?.present_today ?? placeholder}
+          subtitle={
+            metrics
+              ? `${metrics.late_today} late arrivals reported`
+              : "Daily attendance"
+          }
+          icon={<CalendarCheck className="size-[18px]" />}
+          variant="blue"
         />
-
         <StatCard
-          title="Monthly Net Salary (৳)"
-          value="৳82,300"
-          subtitle="Gross: ৳92,000 &bull; EBL Bank Transfer"
+          title="On leave today"
+          value={metrics?.on_leave_today ?? placeholder}
+          subtitle="Employee leave status"
+          icon={<CalendarRange className="size-[18px]" />}
           variant="indigo"
-          icon={<Banknote className="h-5 w-5" />}
-          trend={{ value: "Disbursed", isPositive: true }}
+        />
+        <StatCard
+          title="Pending requests"
+          value={approvals ?? placeholder}
+          subtitle="Leave, loans & short leave"
+          icon={<ClipboardCheck className="size-[18px]" />}
+          variant="amber"
         />
       </div>
-
-      {/* Executive Visual Analytics: Beautiful Pie Chart & Bar Chart */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-        <div className="lg:col-span-6 flex flex-col">
-          <DashboardPieChart
-            attendanceSummary={{
-              total: metrics?.total_employees ?? 68,
-              present: metrics?.present_today ?? 60,
-              late: metrics?.late_today ?? 3,
-              leave: metrics?.on_leave_today ?? 3,
-              absent: metrics?.absent_today ?? 2,
-              attendance_rate: metrics?.attendance_rate ?? "88.2%",
-            }}
-            onOpenAllAttendance={() => setShowAllAttendanceModal(true)}
-          />
-        </div>
-        <div className="lg:col-span-6 flex flex-col">
-          <DashboardBarChart
-            weeklyData={metrics?.weekly_attendance}
-            totalEmployees={metrics?.total_employees ?? 68}
-            onOpenAllAttendance={() => setShowAllAttendanceModal(true)}
-          />
-        </div>
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.8fr)_minmax(0,1fr)]">
+        <DashboardBarChart
+          weeklyData={metrics?.weekly_attendance}
+          totalEmployees={metrics?.total_employees}
+        />
+        <DashboardPieChart
+          attendanceSummary={
+            metrics
+              ? {
+                  total: metrics.total_employees,
+                  present: metrics.present_today,
+                  late: metrics.late_today,
+                  leave: metrics.on_leave_today,
+                  absent: metrics.absent_today,
+                  attendance_rate: metrics.attendance_rate,
+                }
+              : undefined
+          }
+          onOpenAllAttendance={() => setShowAllAttendanceModal(true)}
+        />
       </div>
-
-      {/* Main Grid: Punch Clock & Right Panels */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left: Punch Clock Widget & Launchpad */}
-        <div className="lg:col-span-1 space-y-6">
-          <CardWrapper
-            title="Biometric Attendance Check-In"
-            description="Geofenced terminal & SilkBio device sync"
-          >
-            <div className="space-y-4 pt-2">
-              <div className="p-4 rounded-xl bg-white border-2 border-slate-900 shadow-sm flex flex-col items-center text-center">
-                <div className="h-12 w-12 rounded-xl bg-slate-900 text-white shadow-xs flex items-center justify-center mb-2 font-bold">
-                  <Clock className="h-6 w-6 text-white" />
-                </div>
-                
-                {hasPunchedIn ? (
-                  <div className="w-full space-y-2">
-                    <div className="bg-emerald-50 border border-emerald-300 rounded-lg p-2.5">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-emerald-800 font-bold flex items-center gap-1">
-                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" /> Punched In:
-                        </span>
-                        <span className="font-mono font-extrabold text-emerald-950 text-sm">{inTime || "09:00 AM"}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-xs mt-1 pt-1 border-t border-emerald-200">
-                        <span className="text-slate-600 font-medium">Last Punch Out:</span>
-                        <span className="font-mono font-bold text-slate-900">{lastOutTime || "—"}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-xs mt-1 pt-1 border-t border-emerald-200">
-                        <span className="text-slate-700 font-extrabold">Total Duty Hours:</span>
-                        <span className="font-mono font-black text-emerald-900 text-sm">
-                          {workingHours || "Pending Out"}
-                        </span>
-                      </div>
-                      {overtimeHours && (
-                        <div className="flex items-center justify-between text-xs mt-1 pt-1 border-t border-emerald-200">
-                          <span className="text-amber-700 font-bold">Overtime (OT):</span>
-                          <span className="font-mono font-bold text-amber-900">{overtimeHours}</span>
-                        </div>
-                      )}
-                    </div>
-
-                    <Button
-                      variant="outline"
-                      className="w-full border-2 border-rose-400 bg-white hover:bg-rose-50 text-rose-900 font-extrabold shadow-sm py-2"
-                      onClick={onPunchOut || handlePunchClick}
-                      isLoading={isPunching}
-                    >
-                      <LogOut className="h-4 w-4 text-rose-600 mr-2" />
-                      {lastOutTime ? "Punch Out Again" : "Punch Out"}
-                    </Button>
-                    <p className="text-[11px] text-slate-600 font-medium leading-tight">
-                      ✓ Punch out as many times as you want. The latest punch out counts total duty.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="w-full space-y-2">
-                    <p className="text-2xl font-extrabold text-slate-900 font-mono tracking-tight">
-                      Not Punched
-                    </p>
-                    <div className="flex items-center justify-center gap-1.5 text-xs text-slate-700 font-semibold">
-                      <MapPin className="h-3.5 w-3.5 text-emerald-700" />
-                      <span>Tejgaon I/A, Dhaka HQ &bull; In-Office</span>
-                    </div>
-                    <Button
-                      variant="default"
-                      className="w-full bg-slate-900 hover:bg-slate-800 text-white font-extrabold shadow-sm shadow-slate-900/30 mt-2 py-2"
-                      onClick={onPunchIn || handlePunchClick}
-                      isLoading={isPunching}
-                    >
-                      <Sparkles className="h-4 w-4 text-emerald-400 mr-2" />
-                      Punch In Now
-                    </Button>
-                    <p className="text-[11px] text-slate-600 font-medium leading-tight">
-                      Notice: Employees can punch in only ONCE per day.
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              <div className="space-y-2 text-xs text-slate-700 font-medium divide-y divide-slate-100">
-                <div className="flex justify-between py-1.5">
-                  <span className="text-slate-500">Roster Shift:</span>
-                  <span className="font-bold text-slate-900">General Shift (09:00 - 18:00)</span>
-                </div>
-                <div className="flex justify-between py-1.5">
-                  <span className="text-slate-500">Grace Buffer:</span>
-                  <span className="font-bold text-emerald-700">15 Minutes (Up to 09:15 AM)</span>
-                </div>
-                <div className="flex justify-between py-1.5">
-                  <span className="text-slate-500">Today Elapsed:</span>
-                  <span className="font-mono font-bold text-slate-900">8h 15m (Active)</span>
-                </div>
-                <div className="flex justify-between py-1.5">
-                  <span className="text-slate-500">Device Protocol:</span>
-                  <span className="font-bold text-blue-700">ZKTeco SilkBio 101TC &bull; Verified</span>
-                </div>
-              </div>
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.8fr)_minmax(0,1fr)]">
+        <CardWrapper
+          title="Needs your attention"
+          headerClassName="!flex-row"
+          description="Open the request register to review and take action"
+          headerAction={
+            <Button
+              variant="ghost"
+              size="icon"
+              className="!size-8"
+              aria-label="Refresh dashboard"
+              isLoading={isFetching}
+              onClick={() => refetch()}
+            >
+              <RefreshCw className="size-3.5" />
+            </Button>
+          }
+        >
+          <div className="divide-y divide-slate-100">
+            {reviewRows.map((row) => (
+              <button
+                key={row.title}
+                type="button"
+                onClick={() => onNavigate(row.tab)}
+                className="group flex w-full items-center gap-4 rounded-lg py-3.5 text-left first:pt-1 hover:bg-slate-50"
+              >
+                <span
+                  className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${row.color}`}
+                >
+                  <row.icon className="size-[18px]" />
+                </span>
+                <span className="flex-1">
+                  <Text
+                    as="span"
+                    className="block !text-[13px] !font-medium !text-slate-800"
+                  >
+                    {row.title}
+                  </Text>
+                  <Text
+                    as="span"
+                    variant="caption"
+                    className="mt-1 block !text-[11px]"
+                  >
+                    {row.detail}
+                  </Text>
+                </span>
+                <span className="flex size-7 items-center justify-center rounded-lg bg-slate-100 text-xs font-medium text-slate-600">
+                  {row.count ?? "—"}
+                </span>
+                <ArrowRight className="size-4 text-slate-300 group-hover:text-teal-700" />
+              </button>
+            ))}
+          </div>
+        </CardWrapper>
+        <CardWrapper
+          title="My attendance"
+          description={`${employeeFullId} · Today's punch record`}
+          headerAction={
+            <Badge variant={hasPunchedIn ? "success" : "secondary"}>
+              {hasPunchedIn ? "Punched in" : "Not punched in"}
+            </Badge>
+          }
+        >
+          <div className="grid grid-cols-2 gap-4 rounded-xl bg-slate-50 p-4">
+            <div>
+              <Text variant="caption" className="!text-[11px]">
+                Punch in
+              </Text>
+              <Text className="mt-1 !text-lg !font-semibold !text-slate-800 tabular-nums">
+                {inTime || "—"}
+              </Text>
             </div>
-          </CardWrapper>
-
-          {/* Quick Management Hub / Launchpad */}
-          <CardWrapper
-            title="Employee Self-Service (ESS)"
-            description="Quick application shortcuts"
-          >
-            <div className="grid grid-cols-2 gap-2.5 pt-2">
-              <button
-                onClick={() => onNavigate("leave")}
-                className="p-3 rounded-xl border-2 border-slate-200 bg-white hover:border-slate-900 text-left transition-all cursor-pointer group shadow-xs"
-              >
-                <CalendarRange className="h-4 w-4 text-slate-900 mb-1 group-hover:scale-110 transition-transform" />
-                <p className="text-xs font-bold text-slate-800">Apply Leave</p>
-                <p className="text-[10px] text-slate-600 font-semibold">Leave Request</p>
-              </button>
-
-              <button
-                onClick={() => onNavigate("requests")}
-                className="p-3 rounded-xl border-2 border-slate-200 bg-white hover:border-slate-900 text-left transition-all cursor-pointer group shadow-xs"
-              >
-                <Clock className="h-4 w-4 text-slate-900 mb-1 group-hover:scale-110 transition-transform" />
-                <p className="text-xs font-bold text-slate-800">Late IOM</p>
-                <p className="text-[10px] text-slate-600 font-semibold">Late Explanation</p>
-              </button>
-
-              <button
-                onClick={() => onNavigate("salary")}
-                className="p-3 rounded-xl border-2 border-slate-200 bg-white hover:border-slate-900 text-left transition-all cursor-pointer group shadow-xs"
-              >
-                <Banknote className="h-4 w-4 text-slate-900 mb-1 group-hover:scale-110 transition-transform" />
-                <p className="text-xs font-bold text-slate-800">Payslip</p>
-                <p className="text-[10px] text-slate-600 font-semibold">BLA Voucher ৳</p>
-              </button>
-
-              <button
-                onClick={() => onNavigate("loans")}
-                className="p-3 rounded-xl border-2 border-slate-200 bg-white hover:border-slate-900 text-left transition-all cursor-pointer group shadow-xs"
-              >
-                <FileText className="h-4 w-4 text-slate-900 mb-1 group-hover:scale-110 transition-transform" />
-                <p className="text-xs font-bold text-slate-800">HR Loan</p>
-                <p className="text-[10px] text-slate-600 font-semibold">Festival Advance</p>
-              </button>
+            <div>
+              <Text variant="caption" className="!text-[11px]">
+                Last punch out
+              </Text>
+              <Text className="mt-1 !text-lg !font-semibold !text-slate-800 tabular-nums">
+                {lastOutTime || "—"}
+              </Text>
             </div>
-          </CardWrapper>
-
-          {/* Bangladesh Labour Act (BLA 2006) Leave Balance Matrix */}
-          <CardWrapper
-            title="Leave Balances (BLA 2006 Act)"
-            description="Annual entitlement according to Labour Law"
-          >
-            <div className="space-y-3 pt-2">
-              <div className="space-y-1">
-                <div className="flex justify-between text-xs font-bold">
-                  <span className="text-slate-800">Casual Leave (CL)</span>
-                  <span className="text-emerald-700 font-mono">7 / 10 Days</span>
-                </div>
-                <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-emerald-600 rounded-full" style={{ width: "70%" }} />
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <div className="flex justify-between text-xs font-bold">
-                  <span className="text-slate-800">Sick Leave (SL)</span>
-                  <span className="text-blue-700 font-mono">11 / 14 Days</span>
-                </div>
-                <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-blue-600 rounded-full" style={{ width: "78%" }} />
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <div className="flex justify-between text-xs font-bold">
-                  <span className="text-slate-800">Earned Leave (EL)</span>
-                  <span className="text-indigo-700 font-mono">16 / 18 Days</span>
-                </div>
-                <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-indigo-600 rounded-full" style={{ width: "88%" }} />
-                </div>
-              </div>
-            </div>
-          </CardWrapper>
-        </div>
-
-        {/* Right: Pending Approvals & Performance Trends */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Actionable Pending Approvals Queue */}
-          <CardWrapper
-            title="Pending Line Manager Approvals"
-            description="Submitted staff requests requiring your recommendation or authorization"
-            headerAction={
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onNavigate("leave")}
-                rightIcon={<ArrowUpRight className="h-3.5 w-3.5" />}
-                className="border-slate-300 font-bold text-slate-800"
-              >
-                View All Queue
-              </Button>
+          </div>
+          <div className="my-4 flex items-center justify-between text-xs text-slate-500">
+            <span className="flex items-center gap-1.5">
+              <Clock3 className="size-3.5" />
+              Duty hours
+            </span>
+            <span className="font-medium text-slate-700">
+              {workingHours || "Awaiting punch out"}
+            </span>
+          </div>
+          {overtimeHours && (
+            <Text variant="caption" className="mb-3">
+              Overtime: {overtimeHours}
+            </Text>
+          )}
+          <Button
+            className="w-full"
+            variant={hasPunchedIn ? "outline" : "default"}
+            onClick={
+              hasPunchedIn
+                ? onPunchOut || fallbackPunch
+                : onPunchIn || fallbackPunch
+            }
+            isLoading={isPunching}
+            leftIcon={
+              hasPunchedIn ? (
+                <LogOut className="size-4" />
+              ) : (
+                <CheckCircle2 className="size-4" />
+              )
             }
           >
-            <div className="space-y-3 pt-2">
-              <div className="p-3.5 rounded-xl border-2 border-slate-200 bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-slate-900 text-white font-extrabold text-xs flex items-center justify-center shrink-0 shadow-xs">
-                    NJ
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <p className="text-xs font-bold text-slate-800">Nusrat Jahan &bull; SMT-0026</p>
-                      <Badge variant="warning" className="text-[10px] font-bold">Sick Leave</Badge>
-                    </div>
-                    <p className="text-xs text-slate-600 font-medium mt-0.5">
-                      Oct 15 - Oct 17 (3 Days) &bull; Prescribed medical rest (Certificate attached)
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <Button
-                    size="sm"
-                    className="h-8 text-xs bg-slate-900 text-white hover:bg-slate-800 font-bold shadow-xs"
-                  >
-                    Recommend
-                  </Button>
-                </div>
-              </div>
-
-              <div className="p-3.5 rounded-xl border-2 border-slate-200 bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-slate-900 text-white font-extrabold text-xs flex items-center justify-center shrink-0 shadow-xs">
-                    TA
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <p className="text-xs font-bold text-slate-800">Tanvir Ahmed &bull; SMT-0042</p>
-                      <Badge variant="secondary" className="text-[10px] font-bold">Shift Exchange</Badge>
-                    </div>
-                    <p className="text-xs text-slate-600 font-medium mt-0.5">
-                      Oct 12 &bull; Morning Shift ➔ General Shift (Academic exam schedule)
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <Button
-                    size="sm"
-                    className="h-8 text-xs bg-slate-900 text-white hover:bg-slate-800 font-bold shadow-xs"
-                  >
-                    Approve
-                  </Button>
-                </div>
-              </div>
-
-              <div className="p-3.5 rounded-xl border-2 border-slate-200 bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-xl bg-slate-900 text-white font-extrabold text-xs flex items-center justify-center shrink-0 shadow-xs">
-                    MR
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <p className="text-xs font-bold text-slate-800">Mizanur Rahman &bull; SMT-0078</p>
-                      <Badge variant="default" className="text-[10px] font-bold">Festival Loan ৳30,000</Badge>
-                    </div>
-                    <p className="text-xs text-slate-600 font-medium mt-0.5">
-                      6 Installments @ ৳5,000/month &bull; Salary deduction tenure
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <Button
-                    size="sm"
-                    className="h-8 text-xs bg-slate-900 text-white hover:bg-slate-800 font-bold shadow-xs"
-                  >
-                    Recommend
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </CardWrapper>
-
-          {/* Weekly Attendance Matrix with High Contrast */}
-          <CardWrapper
-            title="Weekly Attendance Headcount"
-            description="Daily enterprise check-in statistics across shifts"
-          >
-            <div className="pt-2 space-y-4">
-              <div className="grid grid-cols-5 gap-3 text-center">
-                {[
-                  { day: "Sun", present: 460, late: 12, rate: "96.0%" },
-                  { day: "Mon", present: 468, late: 8, rate: "97.7%" },
-                  { day: "Tue", present: 455, late: 15, rate: "95.0%" },
-                  { day: "Wed", present: 462, late: 11, rate: "96.4%" },
-                  { day: "Thu", present: 452, late: 18, rate: "94.3%" },
-                ].map((item) => (
-                  <div
-                    key={item.day}
-                    className="p-3 rounded-xl bg-white border-2 border-slate-300 flex flex-col items-center shadow-xs"
-                  >
-                    <span className="text-[11px] font-bold text-slate-700 uppercase">
-                      {item.day}
-                    </span>
-                    <span className="text-xl font-black text-slate-800 my-1 font-mono">
-                      {item.present}
-                    </span>
-                    <span className="text-[10px] font-extrabold text-white bg-emerald-700 px-2 py-0.5 rounded-md shadow-2xs">
-                      {item.rate}
-                    </span>
-                    <span className="text-[10px] text-amber-700 font-bold mt-1">
-                      {item.late} late
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </CardWrapper>
-
-          {/* Upcoming Bangladesh Govt & Festival Holidays */}
-          <CardWrapper
-            title="Upcoming Bangladesh National & Festival Holidays"
-            description="Gazetted holidays under Ministry of Public Administration"
-          >
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
-              <div className="p-3.5 rounded-xl bg-white border border-slate-300 shadow-2xs flex items-start gap-2.5">
-                <Calendar className="h-4 w-4 text-slate-900 mt-0.5 shrink-0" />
-                <div>
-                  <p className="text-xs font-bold text-slate-800">Durga Puja</p>
-                  <p className="text-[11px] text-slate-600 font-medium">24 October 2026 &bull; Saturday</p>
-                  <span className="inline-block mt-1 text-[9px] font-bold px-1.5 py-0.5 bg-slate-900 text-white rounded">
-                    National Holiday
-                  </span>
-                </div>
-              </div>
-
-              <div className="p-3.5 rounded-xl bg-white border border-slate-300 shadow-2xs flex items-start gap-2.5">
-                <Calendar className="h-4 w-4 text-slate-900 mt-0.5 shrink-0" />
-                <div>
-                  <p className="text-xs font-bold text-slate-800">Eid-e-Miladunnabi</p>
-                  <p className="text-[11px] text-slate-600 font-medium">16 November 2026 &bull; Monday</p>
-                  <span className="inline-block mt-1 text-[9px] font-bold px-1.5 py-0.5 bg-slate-900 text-white rounded">
-                    Public Holiday
-                  </span>
-                </div>
-              </div>
-
-              <div className="p-3.5 rounded-xl bg-white border border-slate-300 shadow-2xs flex items-start gap-2.5">
-                <Calendar className="h-4 w-4 text-slate-900 mt-0.5 shrink-0" />
-                <div>
-                  <p className="text-xs font-bold text-slate-800">Victory Day</p>
-                  <p className="text-[11px] text-slate-600 font-medium">16 December 2026 &bull; Wednesday</p>
-                  <span className="inline-block mt-1 text-[9px] font-bold px-1.5 py-0.5 bg-slate-900 text-white rounded">
-                    National Holiday
-                  </span>
-                </div>
-              </div>
-            </div>
-          </CardWrapper>
+            {hasPunchedIn ? "Punch out" : "Punch in now"}
+          </Button>
+        </CardWrapper>
+      </div>
+      <div>
+        <div className="mb-3 flex items-center justify-between">
+          <Title level={3} className="!text-base">
+            Quick access
+          </Title>
+          <Text variant="caption" className="!text-[11px]">
+            Your everyday HR tools
+          </Text>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {shortcuts.map((shortcut) => (
+            <button
+              key={shortcut.tab}
+              type="button"
+              onClick={() => onNavigate(shortcut.tab)}
+              className="group flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4 text-left transition-colors hover:border-teal-300"
+            >
+              <shortcut.icon className="size-5 shrink-0 text-teal-700" />
+              <span className="flex-1">
+                <Text
+                  as="span"
+                  className="block !text-xs !font-medium !text-slate-800"
+                >
+                  {shortcut.title}
+                </Text>
+                <Text
+                  as="span"
+                  variant="caption"
+                  className="mt-1 block !text-[10px]"
+                >
+                  {shortcut.detail}
+                </Text>
+              </span>
+              <ArrowUpRight className="size-4 text-slate-300 group-hover:text-teal-700" />
+            </button>
+          ))}
         </div>
       </div>
-
-      {/* All Employees Today's Attendance Modal */}
-      <AllEmployeesTodayAttendanceModal
-        isOpen={showAllAttendanceModal}
-        onClose={() => setShowAllAttendanceModal(false)}
-      />
+      {showAllAttendanceModal && (
+        <AllEmployeesTodayAttendanceModal
+          isOpen
+          onClose={() => setShowAllAttendanceModal(false)}
+        />
+      )}
     </div>
   );
 }

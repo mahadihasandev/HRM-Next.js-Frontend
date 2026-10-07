@@ -9,8 +9,8 @@ export function Card({
   return (
     <div
       className={cn(
-        "rounded-2xl border border-slate-200 bg-white text-slate-950 shadow-[0_2px_8px_rgba(0,0,0,0.04)] transition-all",
-        className
+        "rounded-2xl border border-slate-200 bg-white text-slate-950 shadow-[0_2px_6px_rgba(15,23,42,0.025)] transition-shadow",
+        className,
       )}
       {...props}
     >
@@ -42,8 +42,8 @@ export function CardTitle({
   return (
     <h3
       className={cn(
-        "font-semibold leading-tight tracking-tight text-base sm:text-lg text-slate-900 dark:text-slate-100",
-        className
+        "font-semibold leading-tight tracking-tight text-sm sm:text-base text-slate-900 dark:text-slate-100",
+        className,
       )}
       {...props}
     >
@@ -94,11 +94,14 @@ export function CardFooter({
   );
 }
 
-export interface CardWrapperProps
-  extends Omit<React.HTMLAttributes<HTMLDivElement>, "title"> {
+export interface CardWrapperProps extends Omit<
+  React.HTMLAttributes<HTMLDivElement>,
+  "title"
+> {
   title?: React.ReactNode;
   description?: React.ReactNode;
   headerAction?: React.ReactNode;
+  headerClassName?: string;
   footer?: React.ReactNode;
 }
 
@@ -106,6 +109,7 @@ export function CardWrapper({
   title,
   description,
   headerAction,
+  headerClassName,
   footer,
   className,
   children,
@@ -114,12 +118,21 @@ export function CardWrapper({
   return (
     <Card className={className} {...props}>
       {(title || description || headerAction) && (
-        <CardHeader className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 space-y-0 pb-3 sm:pb-4">
+        <CardHeader
+          className={cn(
+            "flex flex-col sm:flex-row sm:items-start justify-between gap-3 space-y-0 pb-3 sm:pb-4",
+            headerClassName,
+          )}
+        >
           <div className="space-y-1">
             {title && <CardTitle>{title}</CardTitle>}
             {description && <CardDescription>{description}</CardDescription>}
           </div>
-          {headerAction && <div className="shrink-0 flex items-center gap-2 flex-wrap">{headerAction}</div>}
+          {headerAction && (
+            <div className="shrink-0 flex items-center gap-2 flex-wrap">
+              {headerAction}
+            </div>
+          )}
         </CardHeader>
       )}
       <CardContent>{children}</CardContent>

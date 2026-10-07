@@ -1,5 +1,7 @@
 "use client";
 
+import { requestHrm } from "@/lib/api/request";
+
 import { API_BASE_URL } from "@/lib/api/config";
 
 import React, {
@@ -120,7 +122,7 @@ export default function AppHome() {
         fullId.toLowerCase() === "admin"
           ? "SMT-0001"
           : fullId;
-      const res = await fetch(
+      const res = await requestHrm(
         `${API_BASE_URL}/hrm/permissions/employee/${canonicalId}`,
       );
       if (!res.ok) return;
@@ -141,7 +143,7 @@ export default function AppHome() {
         fullId.toLowerCase() === "admin"
           ? "SMT-0001"
           : fullId;
-      const res = await fetch(
+      const res = await requestHrm(
         `${API_BASE_URL}/hrm/check-today-attendance?employee_full_id=${canonicalId}`,
       );
       if (!res.ok) return;
@@ -174,8 +176,8 @@ export default function AppHome() {
     const loadRemoteData = async () => {
       try {
         const [permRes, attRes] = await Promise.allSettled([
-          fetch(`${API_BASE_URL}/hrm/permissions/employee/${canonicalId}`),
-          fetch(
+          requestHrm(`${API_BASE_URL}/hrm/permissions/employee/${canonicalId}`),
+          requestHrm(
             `${API_BASE_URL}/hrm/check-today-attendance?employee_full_id=${canonicalId}`,
           ),
         ]);
@@ -224,24 +226,24 @@ export default function AppHome() {
     };
 
     try {
-      let res = await fetch(`${API_BASE_URL}/hrm/punch-in`, {
+      let res = await requestHrm(`${API_BASE_URL}/hrm/punch-in`, {
         method: "POST",
         headers: reqHeaders,
         body: JSON.stringify({
           employee_full_id: currentEmployee.fullId,
           time: nowTime,
-          location: "Dhaka Headquarters",
+          location: "Self-service web punch",
         }),
       });
 
       if (res.status === 404) {
-        res = await fetch(`${API_BASE_URL}/hrm/punch-in`, {
+        res = await requestHrm(`${API_BASE_URL}/hrm/punch-in`, {
           method: "POST",
           headers: reqHeaders,
           body: JSON.stringify({
             employee_full_id: currentEmployee.fullId,
             time: nowTime,
-            location: "Dhaka Headquarters",
+            location: "Self-service web punch",
           }),
         });
       }
@@ -281,7 +283,7 @@ export default function AppHome() {
     };
 
     try {
-      let res = await fetch(`${API_BASE_URL}/hrm/punch-out`, {
+      let res = await requestHrm(`${API_BASE_URL}/hrm/punch-out`, {
         method: "POST",
         headers: reqHeaders,
         body: JSON.stringify({
@@ -291,7 +293,7 @@ export default function AppHome() {
       });
 
       if (res.status === 404) {
-        res = await fetch(`${API_BASE_URL}/hrm/punch-out`, {
+        res = await requestHrm(`${API_BASE_URL}/hrm/punch-out`, {
           method: "POST",
           headers: reqHeaders,
           body: JSON.stringify({
@@ -353,8 +355,9 @@ export default function AppHome() {
     toast.success(`Active persona switched to ${emp.name} (${emp.fullId})`);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     if (!window.confirm("Are you sure you want to log out?")) return;
+    try { await requestHrm(`${API_BASE_URL}/logout`, { method: "POST" }); } catch { /* Clear the local session even if offline. */ }
     // Reset attendance state on logout
     setTodayAttendance({
       hasPunchedIn: false,
@@ -382,7 +385,7 @@ export default function AppHome() {
     }
     setIsGrantingQuick(true);
     try {
-      const res = await fetch(
+      const res = await requestHrm(
         `${API_BASE_URL}/hrm/permissions/employee/${currentEmployee.fullId}`,
         {
           method: "POST",
@@ -588,13 +591,13 @@ export default function AppHome() {
                   ) : (
                     <Button
                       size="sm"
-                      onClick={() => handleSwitchEmployee(PERSONA_PRESETS[0])}
+                      onClick={() => toast.error("Ask your company HR administrator to grant access.")}
                       leftIcon={
                         <UserCheck className="h-4 w-4 text-emerald-400" />
                       }
                       className="bg-slate-900 hover:bg-slate-800 text-white font-black shadow-md shadow-slate-900/20 w-full sm:w-auto"
                     >
-                      Switch to System Admin to Grant
+                      Contact your HR administrator
                     </Button>
                   )}
                 </div>
@@ -602,6 +605,9 @@ export default function AppHome() {
             </div>
           ) : (
             <>
+              {process.env.NEXT_PUBLIC_ENABLE_DEMO_PREVIEWS !== 'true' && !['dashboard', 'employees', 'today-attendance', 'attendance', 'leave', 'salary', 'factory'].includes(activeTab) ? (
+                <CardWrapper title="Module requires server integration" description="This inherited module contains demonstration data. It is unavailable until company-scoped persistence and permissions are implemented." />
+              ) : <>
               {activeTab === "dashboard" && (
                 <DashboardView
                   onNavigate={setActiveTab}
@@ -740,6 +746,7 @@ export default function AppHome() {
               {activeTab === "sfm" && <SfmManagementView />}
 
               {activeTab === "notices" && <NoticesView />}
+              </>}
             </>
           )}
         </main>

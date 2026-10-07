@@ -12,5 +12,5 @@ jobs:
       - run: npm ci
       - run: npm run test:payroll
       - run: npx tsc --noEmit
-      - run: npx eslint app/page.tsx app/layout.tsx components/layout components/modules/dashboard components/modules/auth/LoginView.tsx components/modules/employees/EmployeeDirectoryView.tsx components/modules/leave/LeaveManagementView.tsx components/shared/Brand components/shared/Card components/shared/Button components/shared/Typography/Text.tsx components/shared/Feedback/Badge.tsx components/shared/Layout/PageHeader.tsx components/shared/Search components/shared/Input components/modules/factory components/modules/payroll/PayrollWorkspace.tsx components/modules/payroll/PayrollImportPanel.tsx components/modules/payroll/PayrollRegister.tsx components/modules/payroll/PreviousPayslips.tsx components/modules/payroll/SalaryPayrollView.tsx components/modules/payroll/ManageOvertimeModal.tsx store/services/factory store/services/payroll/payrollRunApi.ts store/services/payroll/overtimeApi.ts store/services/payroll/runTypes.ts lib/payroll lib/api/config.ts store/services/baseApi.ts tests/payroll-import.test.ts
+      - run: npm run lint
       - run: npm run build

@@ -158,8 +158,8 @@ export function SndManagementView() {
   const [punchSalesApi, { isLoading: isPunching }] = usePunchSndSalesMutation();
 
   // State
-  const [customers, setCustomers] = useState<Customer[]>(INITIAL_CUSTOMERS);
-  const [orders, setOrders] = useState<SalesOrder[]>(INITIAL_ORDERS);
+  const [localCustomers, setCustomers] = useState<Customer[]>(INITIAL_CUSTOMERS);
+  const [localOrders, setOrders] = useState<SalesOrder[]>(INITIAL_ORDERS);
   const [visits, setVisits] = useState<SndVisit[]>(INITIAL_VISITS);
   const [feedback, setFeedback] = useState<FeedbackBanner | null>(null);
 
@@ -168,18 +168,8 @@ export function SndManagementView() {
   const [isAddOrderOpen, setIsAddOrderOpen] = useState(false);
   const [isPunchModalOpen, setIsPunchModalOpen] = useState(false);
 
-  // Sync API data if available
-  React.useEffect(() => {
-    if (apiCustomersResp?.data && apiCustomersResp.data.length > 0) {
-      setCustomers(apiCustomersResp.data);
-    }
-  }, [apiCustomersResp]);
-
-  React.useEffect(() => {
-    if (apiOrdersResp?.data && apiOrdersResp.data.length > 0) {
-      setOrders(apiOrdersResp.data);
-    }
-  }, [apiOrdersResp]);
+  const customers = apiCustomersResp?.data ?? localCustomers;
+  const orders = apiOrdersResp?.data ?? localOrders;
 
   const dashboardData = sndDashboardResp?.data;
 

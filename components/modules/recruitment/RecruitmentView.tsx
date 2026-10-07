@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { cn } from "@/lib/utils";
 import {
   Briefcase,
@@ -180,11 +180,6 @@ export function RecruitmentView({ initialSubTab }: RecruitmentViewProps = {}) {
     initialSubTab ? [initialSubTab] : ["jobs", "applications"]
   );
 
-  useEffect(() => {
-    if (initialSubTab) {
-      setOpenSections(initialSubTab === "applications" ? ["applications"] : ["jobs"]);
-    }
-  }, [initialSubTab]);
 
   const [jobs, setJobs] = useState<JobOpening[]>(INITIAL_JOBS);
   const [applicants, setApplicants] = useState<Applicant[]>(INITIAL_APPLICANTS);

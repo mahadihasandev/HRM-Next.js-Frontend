@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   CalendarRange,
   Plus,
@@ -20,13 +20,15 @@ import {
   EmptyState,
   Label,
 } from "@/components/shared";
-import { MOCK_LEAVE_APPLICATIONS } from "@/lib/api/hrmClient";
-import { LeaveApplication, LeaveApiRecord, ApiResponse } from "@/types/hrm";
+import toast from "react-hot-toast";
+import { useGetLeaveApplicationsQuery, useApplyLeaveMutation, useTransitionLeaveMutation } from "@/store/services/leave";
+
 
 export function LeaveManagementView() {
-  const [applications, setApplications] = useState<LeaveApplication[]>(
-    MOCK_LEAVE_APPLICATIONS,
-  );
+  const { data: response, isLoading, isError } = useGetLeaveApplicationsQuery();
+  const applications = response?.data ?? [];
+  const [applyLeave, { isLoading: isSaving }] = useApplyLeaveMutation();
+  const [transitionLeave] = useTransitionLeaveMutation();
   const [activeTab, setActiveTab] = useState<"all" | "pending" | "approved">(
     "all",
   );
@@ -35,58 +37,12 @@ export function LeaveManagementView() {
   const pageSize = 10;
 
   // Form states
-  const [fromDate, setFromDate] = useState("2026-10-20");
-  const [toDate, setToDate] = useState("2026-10-22");
+  const [fromDate, setFromDate] = useState(new Date().toISOString().slice(0, 10));
+  const [toDate, setToDate] = useState(new Date().toISOString().slice(0, 10));
   const [leaveType, setLeaveType] = useState("1");
   const [reason, setReason] = useState("");
-  const [emergencyPhone, setEmergencyPhone] = useState("01717186089");
+  const [emergencyPhone, setEmergencyPhone] = useState("");
   const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
-
-  useEffect(() => {
-    let isMounted = true;
-    const fetchLeaves = async () => {
-      try {
-        const res = await fetch(
-          "http://127.0.0.1:8000/api/hrm/leave-applications",
-        );
-        if (!res.ok) return;
-        const json: ApiResponse<LeaveApiRecord[]> = await res.json();
-        if (
-          json?.data &&
-          Array.isArray(json.data) &&
-          json.data.length > 0 &&
-          isMounted
-        ) {
-          const mapped: LeaveApplication[] = json.data.map(
-            (item: LeaveApiRecord) => ({
-              id: item.id,
-              employee_id: item.employee_id || 479,
-              employee_name: item.employee_name || "Abdul Halim",
-              employee_full_id: item.employee_full_id || "SMT-0051",
-              leave_type: item.leave_type || "Casual Leave",
-              leave_type_id: item.leave_type_id || 1,
-              from_date: item.from_date,
-              to_date: item.to_date,
-              days_count: item.days_count || 1,
-              reason: item.reason || "Personal affairs",
-              emergency_phone: item.emergency_phone || "01717186089",
-              status: item.status || "Approved",
-              applied_at: item.applied_at || "Recent",
-              recommended_by: item.recommended_by,
-              approved_by: item.approved_by,
-            }),
-          );
-          setApplications(mapped);
-        }
-      } catch {
-        // Fallback to initial mock if network fails
-      }
-    };
-    fetchLeaves();
-    return () => {
-      isMounted = false;
-    };
-  }, []);
 
   const calculateDaysCount = (start: string, end: string): number => {
     if (!start || !end) return 1;
@@ -104,100 +60,25 @@ export function LeaveManagementView() {
     e.preventDefault();
     const computedDays = calculateDaysCount(fromDate, toDate);
 
-    const newApp: LeaveApplication = {
-      id: Math.floor(1000 + Math.random() * 9000),
-      employee_id: 479,
-      employee_name: "Abdul Halim",
-      employee_full_id: "SMT-0051",
-      leave_type:
-        leaveType === "1"
-          ? "Casual Leave"
-          : leaveType === "2"
-            ? "Annual Leave"
-            : "Medical Leave",
-      leave_type_id: Number(leaveType),
-      from_date: fromDate,
-      to_date: toDate,
-      days_count: computedDays,
-      reason: reason || "Personal affairs",
-      emergency_phone: emergencyPhone,
-      status: "Pending Recommend",
-      applied_at: "Just now",
-    };
-
-    setApplications([newApp, ...applications]);
-    setIsApplyModalOpen(false);
-    setReason("");
-    setFeedbackMsg(
-      `✓ Leave application for ${computedDays} day(s) submitted successfully!`,
-    );
-    setTimeout(() => setFeedbackMsg(null), 5000);
-
+    if (toDate < fromDate) { toast.error('End date must be on or after the start date.'); return; }
     try {
-      await fetch("http://127.0.0.1:8000/api/hrm/leave/apply", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          from_date: fromDate,
-          to_date: toDate,
-          leave_type: leaveType,
-          days_count: computedDays,
-          reason: reason || "Personal affairs",
-          emergency_phone: emergencyPhone,
-        }),
-      });
-    } catch {
-      // offline handling
-    }
+      const result = await applyLeave({ leave_type_id: Number(leaveType), from_date: fromDate, to_date: toDate, reason, emergency_phone: emergencyPhone }).unwrap();
+      if (!result.status) throw new Error(result.message || 'Leave application failed');
+      setIsApplyModalOpen(false);
+      setReason('');
+      setFeedbackMsg(`Leave application for ${computedDays} day(s) submitted successfully.`);
+    } catch { toast.error('Leave could not be submitted. Your application has not been saved.'); }
   };
 
-  const handleRecommend = async (id: number | string) => {
-    setApplications(
-      applications.map((app) =>
-        app.id === id
-          ? {
-              ...app,
-              status: "Pending Approve",
-              recommended_by: "Abdul Halim (HR)",
-            }
-          : app,
-      ),
-    );
+  const handleTransition = async (id: number | string, action: 'recommend' | 'approve') => {
     try {
-      await fetch(
-        `http://127.0.0.1:8000/api/hrm/recommend-leave-application/${id}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ note: "Recommended by HR Line Manager" }),
-        },
-      );
-    } catch {
-      // ignore
-    }
+      const result = await transitionLeave({ id, action }).unwrap();
+      if (!result.status) throw new Error(result.message || 'Leave action failed');
+      toast.success(result.message || 'Leave updated successfully');
+    } catch { toast.error('Leave could not be updated. Check your approval permission and current status.'); }
   };
-
-  const handleApprove = async (id: number | string) => {
-    setApplications(
-      applications.map((app) =>
-        app.id === id
-          ? { ...app, status: "Approved", approved_by: "Director" }
-          : app,
-      ),
-    );
-    try {
-      await fetch(
-        `http://127.0.0.1:8000/api/hrm/approve-leave-application/${id}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ note: "Approved by Operations Director" }),
-        },
-      );
-    } catch {
-      // ignore
-    }
-  };
+  const handleRecommend = (id: number | string) => handleTransition(id, 'recommend');
+  const handleApprove = (id: number | string) => handleTransition(id, 'approve');
 
   const filtered = applications.filter((app) => {
     if (activeTab === "pending") return app.status.includes("Pending");
@@ -213,12 +94,14 @@ export function LeaveManagementView() {
 
   return (
     <div className="space-y-6">
+      {isLoading && <Banner variant="info" title="Loading leave applications" />}
+      {isError && <Banner variant="danger" title="Leave applications unavailable" description="Check your connection or sign in again." />}
       <PageHeader
         title="Leave Management & Approval Workflow"
         subtitle="Submit annual, medical or casual leave applications and process recommendation workflows"
         badge={
           <Badge variant="default" className="gap-1">
-            <CalendarRange className="h-3 w-3" /> 39 Days Left
+            <CalendarRange className="h-3 w-3" /> {applications.length} applications
           </Badge>
         }
         action={
@@ -242,86 +125,7 @@ export function LeaveManagementView() {
         />
       )}
 
-      {/* Leave Balances Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-        <CardWrapper className="border border-slate-200 bg-white">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-700 uppercase tracking-wider">
-              Casual Leave (CL)
-            </span>
-            <div className="h-8 w-8 rounded-lg bg-slate-900 text-white flex items-center justify-center font-semibold text-xs shadow-xs">
-              CL
-            </div>
-          </div>
-          <div className="mt-3 flex items-baseline justify-between">
-            <Title level={2} className="text-2xl font-semibold text-gray-700">
-              11 Days
-            </Title>
-            <span className="text-xs font-medium text-slate-600">
-              Allocated: 14
-            </span>
-          </div>
-          <div className="mt-2 h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-slate-900 rounded-full"
-              style={{ width: "78%" }}
-            />
-          </div>
-        </CardWrapper>
-
-        <CardWrapper className="border border-slate-200 bg-white">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-700 uppercase tracking-wider">
-              Annual / Earned Leave (AL)
-            </span>
-            <div className="h-8 w-8 rounded-lg bg-emerald-700 text-white flex items-center justify-center font-semibold text-xs shadow-xs">
-              AL
-            </div>
-          </div>
-          <div className="mt-3 flex items-baseline justify-between">
-            <Title
-              level={2}
-              className="text-2xl font-semibold text-emerald-700"
-            >
-              18 Days
-            </Title>
-            <span className="text-xs font-medium text-slate-600">
-              Allocated: 20
-            </span>
-          </div>
-          <div className="mt-2 h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-emerald-600 rounded-full"
-              style={{ width: "90%" }}
-            />
-          </div>
-        </CardWrapper>
-
-        <CardWrapper className="border border-slate-200 bg-white">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-700 uppercase tracking-wider">
-              Medical / Sick Leave (ML)
-            </span>
-            <div className="h-8 w-8 rounded-lg bg-slate-900 text-white flex items-center justify-center font-semibold text-xs shadow-xs">
-              ML
-            </div>
-          </div>
-          <div className="mt-3 flex items-baseline justify-between">
-            <Title level={2} className="text-2xl font-semibold text-gray-700">
-              10 Days
-            </Title>
-            <span className="text-xs font-medium text-slate-600">
-              Allocated: 14
-            </span>
-          </div>
-          <div className="mt-2 h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-slate-900 rounded-full"
-              style={{ width: "71%" }}
-            />
-          </div>
-        </CardWrapper>
-      </div>
+      <Banner variant="info" title="Leave allowances need company policy setup" description="This register shows recorded applications. Annual allocations and remaining balances are not configured." />
 
       {/* Applications Workflow Section */}
       <CardWrapper
@@ -420,7 +224,7 @@ export function LeaveManagementView() {
                           {app.from_date} ➔ {app.to_date}
                         </p>
                         <span className="text-[11px] font-semibold text-white bg-slate-900 px-2 py-0.5 rounded shadow-2xs">
-                          {app.days_count} Working Day
+                          {app.days_count} Calendar Day
                           {app.days_count > 1 ? "s" : ""}
                         </span>
                       </td>
@@ -531,13 +335,14 @@ export function LeaveManagementView() {
                   onChange={(e) => setLeaveType(e.target.value)}
                   className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 focus:outline-none focus:border-teal-600 focus:ring-1 focus:ring-teal-600/10"
                 >
-                  <option value="1">Casual Leave (11 days remaining)</option>
+                  <option value="1">Casual Leave</option>
                   <option value="2">
-                    Annual / Earned Leave (18 days remaining)
+                    Annual / Earned Leave
                   </option>
                   <option value="3">
-                    Medical / Sick Leave (10 days remaining)
+                    Medical / Sick Leave
                   </option>
+                  <option value="4">Maternity Leave</option>
                 </select>
               </div>
 
@@ -564,7 +369,7 @@ export function LeaveManagementView() {
                   Calculated Leave Duration:
                 </span>
                 <span className="font-semibold text-white bg-slate-900 px-3 py-1 rounded-md shadow-2xs">
-                  {calculateDaysCount(fromDate, toDate)} Working Day
+                  {calculateDaysCount(fromDate, toDate)} Calendar Day
                   {calculateDaysCount(fromDate, toDate) > 1 ? "s" : ""}
                 </span>
               </div>
@@ -596,7 +401,7 @@ export function LeaveManagementView() {
                 >
                   Cancel
                 </Button>
-                <Button type="submit">Submit Application</Button>
+                <Button type="submit" disabled={isSaving}>Submit Application</Button>
               </div>
             </form>
           </div>

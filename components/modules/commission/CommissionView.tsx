@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { cn } from "@/lib/utils";
 import {
   Coins,
@@ -119,11 +119,6 @@ export function CommissionView({ initialSubTab }: CommissionViewProps = {}) {
     initialSubTab ? [initialSubTab] : ["generate", "slabs", "list"]
   );
 
-  useEffect(() => {
-    if (initialSubTab) {
-      setOpenSections([initialSubTab]);
-    }
-  }, [initialSubTab]);
 
   const [slabs] = useState<CommissionSlab[]>(INITIAL_SLABS);
   const [records, setRecords] = useState<CommissionRecord[]>(INITIAL_COMMISSIONS);

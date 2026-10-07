@@ -61,9 +61,9 @@ export function RegisterEmployeeModal({
     new Date().toISOString().split("T")[0]
   );
   const [presentAddress, setPresentAddress] = useState("");
-  const [bankName, setBankName] = useState("Eastern Bank PLC");
+  const [bankName, setBankName] = useState("");
   const [bankAccountNo, setBankAccountNo] = useState("");
-  const [password, setPassword] = useState("password123");
+  const [password, setPassword] = useState("");
 
   // Email Verification State
   const [verificationCode, setVerificationCode] = useState("");
@@ -155,6 +155,7 @@ export function RegisterEmployeeModal({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !designation.trim()) return;
+    if (password.trim().length < 8) { toast.error("Set a password of at least 8 characters."); return; }
 
     if (isCodeSent && !isVerified) {
       toast.error("Please verify your 6-digit email code before completing registration.");
@@ -173,12 +174,12 @@ export function RegisterEmployeeModal({
       phone: phone.trim() || "01712000000",
       gender,
       blood_group: bloodGroup,
-      basic_salary: Number(basicSalary) || 45000,
+      basic_salary: Number(basicSalary),
       joining_date: joiningDate,
       present_address: presentAddress.trim() || "Dhaka, Bangladesh",
       bank_name: bankName,
-      bank_account_no: bankAccountNo.trim() || "1081250" + Math.floor(100000 + Math.random() * 900000),
-      password: password.trim() || "password123",
+      bank_account_no: bankAccountNo.trim(),
+      password: password.trim(),
       verification_code: isVerified ? verificationCode.trim() : undefined,
       is_verified: isVerified,
     };
@@ -420,7 +421,7 @@ export function RegisterEmployeeModal({
               <Input
                 label="Portal & Mobile Punch Login Password"
                 type="text"
-                placeholder="Default: password123"
+                placeholder="Set a password of at least 8 characters"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />

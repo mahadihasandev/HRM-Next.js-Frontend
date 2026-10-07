@@ -1,5 +1,8 @@
 "use client";
 
+import { API_BASE_URL } from "@/lib/api/config";
+import { requestHrm } from "@/lib/api/request";
+
 import React, { useState } from "react";
 import {
   KeyRound,
@@ -30,7 +33,7 @@ export function ApiCredentialsModal({
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [apiKey, setApiKey] = useState("");
-  const [apiUrl, setApiUrl] = useState("http://127.0.0.1:8000/api");
+  const [apiUrl, setApiUrl] = useState(`${API_BASE_URL}`);
 
   const [isLoading, setIsLoading] = useState(false);
   const [testResult, setTestResult] = useState<{
@@ -47,7 +50,7 @@ export function ApiCredentialsModal({
 
     try {
       // Test local Laravel or remote API login
-      const response = await fetch(`${apiUrl}/login`, {
+      const response = await requestHrm(`${apiUrl}/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

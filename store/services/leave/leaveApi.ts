@@ -18,6 +18,10 @@ export const leaveApi = baseApi.injectEndpoints({
       query: () => "/hrm/leave/types",
     }),
 
+    transitionLeave: builder.mutation<ApiResponse<LeaveApplicationItem>, { id: number | string; action: 'recommend' | 'approve' }>({
+      query: ({ id, action }) => ({ url: `/hrm/${action}-leave-application/${id}`, method: 'POST' }),
+      invalidatesTags: ['Leave', 'Dashboard'],
+    }),
     applyLeave: builder.mutation<ApiResponse<LeaveApplicationResponse>, ApplyLeaveRequest>({
       query: (body) => ({
         url: "/hrm/leave/apply",
@@ -34,4 +38,5 @@ export const {
   useGetLeaveApplicationsQuery,
   useGetLeaveTypesQuery,
   useApplyLeaveMutation,
+  useTransitionLeaveMutation,
 } = leaveApi;

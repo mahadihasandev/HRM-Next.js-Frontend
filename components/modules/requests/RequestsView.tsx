@@ -1,5 +1,8 @@
 "use client";
 
+import { API_BASE_URL } from "@/lib/api/config";
+import { requestHrm } from "@/lib/api/request";
+
 import React, { useState, useEffect } from "react";
 import {
   Clock,
@@ -120,11 +123,6 @@ export function RequestsView({ initialSubTab = "short-leave" }: RequestsViewProp
     "short-leave" | "late-iom" | "shifts" | "outwork" | "daily-work" | "trainings"
   >(initialSubTab);
 
-  useEffect(() => {
-    if (initialSubTab) {
-      setActiveSubTab(initialSubTab);
-    }
-  }, [initialSubTab]);
   const [shortLeaves, setShortLeaves] = useState(MOCK_SHORT_LEAVES);
   const [lateRequests, setLateRequests] = useState(MOCK_LATE_REQUESTS);
   const [shifts, setShifts] = useState(MOCK_SHIFT_EXCHANGES);
@@ -155,12 +153,12 @@ export function RequestsView({ initialSubTab = "short-leave" }: RequestsViewProp
     const fetchAllRequests = async () => {
       try {
         const [resShort, resLate, resShift, resOut, resDaily, resTrain] = await Promise.all([
-          fetch("http://127.0.0.1:8000/api/hrm/short-leave/list").catch(() => null),
-          fetch("http://127.0.0.1:8000/api/hrm/late-request").catch(() => null),
-          fetch("http://127.0.0.1:8000/api/hrm/shift-applications").catch(() => null),
-          fetch("http://127.0.0.1:8000/api/hrm/outwork/list").catch(() => null),
-          fetch("http://127.0.0.1:8000/api/hrm/daily-work").catch(() => null),
-          fetch("http://127.0.0.1:8000/api/hrm/tranings").catch(() => null),
+          requestHrm(`${API_BASE_URL}/hrm/short-leave/list`).catch(() => null),
+          requestHrm(`${API_BASE_URL}/hrm/late-request`).catch(() => null),
+          requestHrm(`${API_BASE_URL}/hrm/shift-applications`).catch(() => null),
+          requestHrm(`${API_BASE_URL}/hrm/outwork/list`).catch(() => null),
+          requestHrm(`${API_BASE_URL}/hrm/daily-work`).catch(() => null),
+          requestHrm(`${API_BASE_URL}/hrm/tranings`).catch(() => null),
         ]);
 
         if (resShort && resShort.ok) {

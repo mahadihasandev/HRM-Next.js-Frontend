@@ -1,5 +1,8 @@
 "use client";
 
+import { API_BASE_URL } from "@/lib/api/config";
+import { requestHrm } from "@/lib/api/request";
+
 import React, { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import {
@@ -258,8 +261,8 @@ export function AccountingView({
     const loadAccountingData = async () => {
       try {
         const [resVouchers, resSummary] = await Promise.all([
-          fetch("http://127.0.0.1:8000/api/accounting/vouchers").catch(() => null),
-          fetch("http://127.0.0.1:8000/api/accounting/summary").catch(() => null),
+          requestHrm(`${API_BASE_URL}/accounting/vouchers`).catch(() => null),
+          requestHrm(`${API_BASE_URL}/accounting/summary`).catch(() => null),
         ]);
 
         if (resVouchers && resVouchers.ok) {
@@ -336,7 +339,7 @@ export function AccountingView({
     };
 
     try {
-      await fetch("http://127.0.0.1:8000/api/accounting/vouchers/store", {
+      await requestHrm(`${API_BASE_URL}/accounting/vouchers/store`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

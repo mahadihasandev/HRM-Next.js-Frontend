@@ -88,6 +88,8 @@ export const authSlice = createSlice({
       if (typeof window !== "undefined") {
         try {
           localStorage.removeItem(STORAGE_KEY);
+          localStorage.removeItem("auth_token");
+          localStorage.removeItem("hrm_api_key");
         } catch {
           // ignore
         }

@@ -1,5 +1,8 @@
 "use client";
 
+import { API_BASE_URL } from "@/lib/api/config";
+import { requestHrm } from "@/lib/api/request";
+
 import React, { useState, useEffect, useCallback } from "react";
 import toast from "react-hot-toast";
 import {
@@ -23,7 +26,7 @@ import {
   EmptyState,
   StatCard,
 } from "@/components/shared";
-import { MOCK_ATTENDANCE } from "@/lib/api/hrmClient";
+
 import { AttendanceRecord, AttendanceApiRecord, ApiResponse } from "@/types/hrm";
 import { AllEmployeesTodayAttendanceModal } from "./AllEmployeesTodayAttendanceModal";
 
@@ -36,7 +39,7 @@ export function AttendanceView({
   employeeFullId = "SMT-0051",
   employeeName = "Abdul Halim",
 }: AttendanceViewProps) {
-  const [records, setRecords] = useState<AttendanceRecord[]>(MOCK_ATTENDANCE);
+  const [records, setRecords] = useState<AttendanceRecord[]>([]);
   const [showAllAttendanceModal, setShowAllAttendanceModal] = useState(false);
   const [hasPunchedIn, setHasPunchedIn] = useState(false);
   const [inTime, setInTime] = useState<string | null>(null);
@@ -49,14 +52,14 @@ export function AttendanceView({
     type: "success" | "warning" | "danger";
     text: string;
   } | null>(null);
-  const [selectedMonth, setSelectedMonth] = useState("2026-10");
+  const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0,7));
   const [isLoadingPunch, setIsLoadingPunch] = useState(false);
 
   // Fetch today's punch status for this employee
   const fetchTodayStatus = useCallback(async () => {
     try {
-      const res = await fetch(
-        `http://127.0.0.1:8000/api/hrm/check-today-attendance?employee_full_id=${employeeFullId}`
+      const res = await requestHrm(
+        `${API_BASE_URL}/hrm/check-today-attendance?employee_full_id=${employeeFullId}`
       );
       if (!res.ok) return;
       const json = await res.json();
@@ -77,12 +80,12 @@ export function AttendanceView({
   // Fetch monthly attendance records
   const fetchLogs = useCallback(async () => {
     try {
-      const res = await fetch(
-        `http://127.0.0.1:8000/api/hrm/v2/monthly-attendance-reports?month=${selectedMonth}&employee_full_id=${employeeFullId}`
+      const res = await requestHrm(
+        `${API_BASE_URL}/hrm/v2/monthly-attendance-reports?month=${selectedMonth}&employee_full_id=${employeeFullId}`
       );
       if (!res.ok) return;
       const json: ApiResponse<AttendanceApiRecord[]> = await res.json();
-      if (json?.data && Array.isArray(json.data) && json.data.length > 0) {
+      if (json?.data && Array.isArray(json.data)) {
         const mapped: AttendanceRecord[] = json.data.map((item: AttendanceApiRecord, idx: number) => ({
           id: item.id || idx + 1,
           employee_id: 1,
@@ -91,9 +94,9 @@ export function AttendanceView({
           in_time: item.in_time || "—",
           out_time: item.out_time || "—",
           status: item.status || "Present",
-          location: item.location || "Tejgaon HQ, Dhaka",
-          punch_source: item.punch_source || "Biometric",
-          working_hours: item.working_hours || (item.in_time ? "8 hrs 45 mins" : "—"),
+          location: item.location || "—",
+          punch_source: item.punch_source || undefined,
+          working_hours: item.working_hours || ("—"),
         }));
         setRecords(mapped);
       }
@@ -108,8 +111,8 @@ export function AttendanceView({
     async function loadData() {
       try {
         const [resToday, resLogs] = await Promise.all([
-          fetch(`http://127.0.0.1:8000/api/hrm/check-today-attendance?employee_full_id=${employeeFullId}`),
-          fetch(`http://127.0.0.1:8000/api/hrm/v2/monthly-attendance-reports?month=${selectedMonth}&employee_full_id=${employeeFullId}`),
+          requestHrm(`${API_BASE_URL}/hrm/check-today-attendance?employee_full_id=${employeeFullId}`),
+          requestHrm(`${API_BASE_URL}/hrm/v2/monthly-attendance-reports?month=${selectedMonth}&employee_full_id=${employeeFullId}`),
         ]);
 
         if (!isCancelled && resToday.ok) {
@@ -127,7 +130,7 @@ export function AttendanceView({
 
         if (!isCancelled && resLogs.ok) {
           const jsonLogs: ApiResponse<AttendanceApiRecord[]> = await resLogs.json();
-          if (jsonLogs?.data && Array.isArray(jsonLogs.data) && jsonLogs.data.length > 0) {
+          if (jsonLogs?.data && Array.isArray(jsonLogs.data)) {
             const mapped: AttendanceRecord[] = jsonLogs.data.map((item: AttendanceApiRecord, idx: number) => ({
               id: item.id || idx + 1,
               employee_id: 1,
@@ -136,9 +139,9 @@ export function AttendanceView({
               in_time: item.in_time || "—",
               out_time: item.out_time || "—",
               status: item.status || "Present",
-              location: item.location || "Tejgaon HQ, Dhaka",
-              punch_source: item.punch_source || "Biometric",
-              working_hours: item.working_hours || (item.in_time ? "8 hrs 45 mins" : "—"),
+              location: item.location || "—",
+              punch_source: item.punch_source || undefined,
+              working_hours: item.working_hours || ("—"),
             }));
             setRecords(mapped);
           }
@@ -162,28 +165,24 @@ export function AttendanceView({
     const nowTime = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: true });
 
     try {
-      let res = await fetch("http://127.0.0.1:8000/api/hrm/punch-in", {
+      let res = await requestHrm(`${API_BASE_URL}/hrm/punch-in`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "Accept": "application/json" },
         body: JSON.stringify({
           employee_full_id: employeeFullId,
           time: nowTime,
-          location: "Dhaka Corporate Headquarters",
-          latitude: 23.8103,
-          longitude: 90.4125,
+          location: "Self-service web punch",
         }),
       });
 
       if (res.status === 404) {
-        res = await fetch("http://127.0.0.1:8000/api/v1/hrm/punch-in", {
+        res = await requestHrm(`${API_BASE_URL}/hrm/punch-in`, {
           method: "POST",
           headers: { "Content-Type": "application/json", "Accept": "application/json" },
           body: JSON.stringify({
             employee_full_id: employeeFullId,
             time: nowTime,
-            location: "Dhaka Corporate Headquarters",
-            latitude: 23.8103,
-            longitude: 90.4125,
+            location: "Self-service web punch",
           }),
         });
       }
@@ -222,26 +221,22 @@ export function AttendanceView({
     const nowTime = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: true });
 
     try {
-      let res = await fetch("http://127.0.0.1:8000/api/hrm/punch-out", {
+      let res = await requestHrm(`${API_BASE_URL}/hrm/punch-out`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "Accept": "application/json" },
         body: JSON.stringify({
           employee_full_id: employeeFullId,
           time: nowTime,
-          latitude: 23.8103,
-          longitude: 90.4125,
         }),
       });
 
       if (res.status === 404) {
-        res = await fetch("http://127.0.0.1:8000/api/v1/hrm/punch-out", {
+        res = await requestHrm(`${API_BASE_URL}/hrm/punch-out`, {
           method: "POST",
           headers: { "Content-Type": "application/json", "Accept": "application/json" },
           body: JSON.stringify({
             employee_full_id: employeeFullId,
             time: nowTime,
-            latitude: 23.8103,
-            longitude: 90.4125,
           }),
         });
       }
@@ -277,7 +272,7 @@ export function AttendanceView({
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Attendance & Geofenced Tracking"
+        title="Attendance & Punch Records"
         subtitle={`Live GPS punch clock, automated biometric logs, and monthly job card statements for ${employeeName} (${employeeFullId})`}
         badge={
           <Badge variant="success" className="gap-1 font-bold">
@@ -292,7 +287,7 @@ export function AttendanceView({
           <div className="space-y-1.5">
             <div className="flex items-center gap-2 flex-wrap">
               <Badge variant="default" className="text-[11px] font-bold bg-slate-900 text-white">
-                Geofence: Dhaka Headquarters
+                Geofence: Self-service web punch
               </Badge>
               {hasPunchedIn ? (
                 <Badge variant="success" className="text-[11px] font-extrabold flex items-center gap-1 bg-emerald-100 text-emerald-900 border border-emerald-300">

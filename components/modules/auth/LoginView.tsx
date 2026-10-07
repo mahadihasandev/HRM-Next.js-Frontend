@@ -1,5 +1,7 @@
 "use client";
 
+import { requestHrm } from "@/lib/api/request";
+
 import { API_BASE_URL } from "@/lib/api/config";
 
 import React, { useState } from "react";
@@ -84,7 +86,7 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
     setErrorMessage(null);
     setIsSendingCode(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/auth/send-verification-code`, {
+      const res = await requestHrm(`${API_BASE_URL}/auth/send-verification-code`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -124,7 +126,7 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
     setErrorMessage(null);
     setIsVerifyingCode(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/auth/verify-code`, {
+      const res = await requestHrm(`${API_BASE_URL}/auth/verify-code`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -167,7 +169,7 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
     setErrorMessage(null);
 
     try {
-      const res = await fetch(`${API_BASE_URL}/register`, {
+      const res = await requestHrm(`${API_BASE_URL}/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -199,7 +201,7 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
           role: "employee",
         };
         const token = data.token;
-        dispatch(setUser({ user: authenticatedUser, token }));
+        dispatch(setUser({ user: authenticatedUser, token, rememberMe }));
         if (onLoginSuccess) {
           onLoginSuccess(authenticatedUser, token);
         }
@@ -235,7 +237,7 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
         : identifier.trim();
 
     try {
-      const response = await fetch(`${API_BASE_URL}/login`, {
+      const response = await requestHrm(`${API_BASE_URL}/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -293,7 +295,7 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
           setIsLoading(false);
           return;
         }
-        dispatch(setUser({ user: authenticatedUser, token }));
+        dispatch(setUser({ user: authenticatedUser, token, rememberMe }));
         if (onLoginSuccess) {
           onLoginSuccess(authenticatedUser, token);
         }
@@ -426,16 +428,7 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
             >
               Sign in
             </button>
-            <button
-              type="button"
-              onClick={() => {
-                setAuthMode("register");
-                setErrorMessage(null);
-              }}
-              className={`pb-3 text-sm font-medium border-b-2 ${authMode === "register" ? "border-teal-700 text-teal-800" : "border-transparent text-slate-400 hover:text-slate-600"}`}
-            >
-              Create account
-            </button>
+
           </div>
           <div className="mb-8">
             <Title

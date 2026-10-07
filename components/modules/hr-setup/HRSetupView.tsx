@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { cn } from "@/lib/utils";
 import {
   CalendarDays,
@@ -193,11 +193,6 @@ export function HRSetupView({ initialSection = "holiday" }: HRSetupViewProps) {
     validTabs.includes(initialSection as SetupTab) ? (initialSection as SetupTab) : "holiday"
   );
 
-  useEffect(() => {
-    if (validTabs.includes(initialSection as SetupTab)) {
-      setSelectedTab(initialSection as SetupTab);
-    }
-  }, [initialSection]);
 
   const activeTab: SetupTab = selectedTab;
 

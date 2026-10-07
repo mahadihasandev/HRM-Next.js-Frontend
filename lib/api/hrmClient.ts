@@ -1,3 +1,4 @@
+import { API_BASE_URL } from "./config";
 import {
   Employee,
   AttendanceRecord,
@@ -12,7 +13,7 @@ import {
 } from "@/types/hrm";
 
 export const DEFAULT_CONFIG = {
-  baseUrl: "http://127.0.0.1:8000/api",
+  baseUrl: API_BASE_URL,
   token: "",
   apiKey: "",
 };

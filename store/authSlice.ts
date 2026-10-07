@@ -1,3 +1,4 @@
+import { clearAuthSession, persistAuthSession, readAuthSession } from "@/lib/api/authStorage";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 export interface AuthUser {
@@ -13,15 +14,16 @@ export interface AuthUser {
 export interface AuthState {
   user: AuthUser | null;
   token: string | null;
+  rememberMe: boolean;
 }
 
-const STORAGE_KEY = "my-app-auth";
+
 
 // Safely restore persisted state in browser environment
 const getInitialAuthState = (): AuthState => {
   if (typeof window !== "undefined") {
     try {
-      const persisted = localStorage.getItem(STORAGE_KEY);
+      const persisted = readAuthSession();
       if (persisted) {
         const parsed = JSON.parse(persisted);
         if (
@@ -36,6 +38,7 @@ const getInitialAuthState = (): AuthState => {
           return {
             user,
             token: typeof parsed.token === "string" ? parsed.token : null,
+            rememberMe: parsed.rememberMe !== false,
           };
         }
       }
@@ -47,6 +50,7 @@ const getInitialAuthState = (): AuthState => {
   return {
     user: null,
     token: null,
+    rememberMe: true,
   };
 };
 
@@ -58,7 +62,7 @@ export const authSlice = createSlice({
   reducers: {
     setUser: (
       state,
-      action: PayloadAction<{ user: AuthUser | null; token: string | null }>
+      action: PayloadAction<{ user: AuthUser | null; token: string | null; rememberMe?: boolean }>
     ) => {
       let user = action.payload.user;
       if (user && (user.fullId === "admin@smart.com" || user.fullId === "admin@smarterp.biz")) {
@@ -66,16 +70,11 @@ export const authSlice = createSlice({
       }
       state.user = user;
       state.token = action.payload.token;
+      state.rememberMe = action.payload.rememberMe ?? state.rememberMe;
 
       if (typeof window !== "undefined") {
         try {
-          localStorage.setItem(
-            STORAGE_KEY,
-            JSON.stringify({
-              user,
-              token: action.payload.token,
-            })
-          );
+          persistAuthSession({ user, token: action.payload.token, rememberMe: state.rememberMe }, state.rememberMe);
         } catch {
           // ignore storage quota error
         }
@@ -87,7 +86,7 @@ export const authSlice = createSlice({
 
       if (typeof window !== "undefined") {
         try {
-          localStorage.removeItem(STORAGE_KEY);
+          clearAuthSession();
         } catch {
           // ignore
         }

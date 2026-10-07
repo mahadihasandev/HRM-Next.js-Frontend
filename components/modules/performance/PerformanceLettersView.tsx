@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { cn } from "@/lib/utils";
 import {
   Award,
@@ -128,11 +128,6 @@ export function PerformanceLettersView({ initialSubTab }: PerformanceLettersView
     initialSubTab ? [initialSubTab] : ["letters", "awards", "training"]
   );
 
-  useEffect(() => {
-    if (initialSubTab) {
-      setOpenSections([initialSubTab]);
-    }
-  }, [initialSubTab]);
 
   const [awards] = useState<AwardItem[]>(INITIAL_AWARDS);
   const [trainings] = useState<TrainingCourse[]>(INITIAL_TRAININGS);

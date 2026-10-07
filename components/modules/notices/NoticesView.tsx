@@ -1,5 +1,8 @@
 "use client";
 
+import { API_BASE_URL } from "@/lib/api/config";
+import { requestHrm } from "@/lib/api/request";
+
 import React, { useState, useEffect } from "react";
 import { Bell, Plus, Calendar, Building2, X } from "lucide-react";
 import {
@@ -29,7 +32,7 @@ export function NoticesView() {
     let isMounted = true;
     const fetchNotices = async () => {
       try {
-        const res = await fetch("http://127.0.0.1:8000/api/hrm/notice-list");
+        const res = await requestHrm(`${API_BASE_URL}/hrm/notice-list`);
         if (!res.ok) return;
         const json: ApiResponse<NoticeApiRecord[]> = await res.json();
         if (json?.data && Array.isArray(json.data) && json.data.length > 0 && isMounted) {
@@ -76,7 +79,7 @@ export function NoticesView() {
     setTimeout(() => setFeedback(null), 5000);
 
     try {
-      await fetch("http://127.0.0.1:8000/api/hrm/notice-create", {
+      await requestHrm(`${API_BASE_URL}/hrm/notice-create`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import toast from "react-hot-toast";
 import {
   Users,
@@ -26,11 +26,10 @@ import {
   EmptyState,
   Banner,
 } from "@/components/shared";
-import { MOCK_EMPLOYEES } from "@/lib/api/hrmClient";
+import { useGetEmployeesQuery, useCreateEmployeeMutation, useUpdateEmployeeMutation, useDeleteEmployeeMutation } from "@/store/services/employees";
 import {
   Employee,
   EmployeeApiRecord,
-  ApiResponse,
   CreateEmployeePayload,
   UpdateEmployeePayload,
 } from "@/types/hrm";
@@ -65,47 +64,45 @@ function mapApiRecordToEmployee(item: EmployeeApiRecord): Employee {
     employee_id: item.employee_id || item.id,
     employee_full_id: item.employee_full_id || `SMT-00${item.id}`,
     name: item.name,
-    email:
-      item.email ||
-      `${item.name.toLowerCase().replace(/[^a-z]/g, "")}@smarterp.biz`,
-    phone_number: item.phone || item.phone_number || "01717186089",
+    email: item.email || "",
+    phone_number: item.phone || item.phone_number || "",
     personal_phone_number:
       item.personal_phone ||
       item.personal_phone_number ||
       item.phone ||
-      "01717186089",
-    designation: item.designation || "Executive",
-    department: item.department || "Sales & Distribution",
-    company: item.company || "Smart Technologies (BD) Ltd.",
+      "",
+    designation: item.designation || "",
+    department: item.department || "",
+    company: item.company || "",
     status:
       item.status === "Active" ||
       item.status === "Inactive" ||
       item.status === "On Leave"
         ? item.status
         : "Active",
-    blood_group: item.blood_group || "B+",
-    gender: item.gender || "Male",
-    marital_status: item.marital_status || "Married",
-    religion: item.religion || "Islam",
-    date_of_birth: item.date_of_birth || "1992-06-15",
-    joining_date: item.joining_date || "2020-02-01",
-    present_address: item.present_address || "Dhaka, Bangladesh",
-    permanent_address: item.permanent_address || "Chittagong, Bangladesh",
-    father_name: item.father_name || "Md. Shamsul Huda",
-    mother_name: item.mother_name || "Begum Rokeya",
-    bank_name: item.bank_name || "Eastern Bank PLC",
-    bank_account_no: item.bank_account_no || "1081250987621",
-    branch_name: item.branch_name || "Banani Branch",
-    routing_name: item.routing_name || "095260842",
+    blood_group: item.blood_group || "",
+    gender: item.gender || "",
+    marital_status: item.marital_status || "",
+    religion: item.religion || "",
+    date_of_birth: item.date_of_birth || "",
+    joining_date: item.joining_date || "",
+    present_address: item.present_address || "",
+    permanent_address: item.permanent_address || "",
+    father_name: item.father_name || "",
+    mother_name: item.mother_name || "",
+    bank_name: item.bank_name || "",
+    bank_account_no: item.bank_account_no || "",
+    branch_name: item.branch_name || "",
+    routing_name: item.routing_name || "",
     salary: {
-      basic: Number(item.basic_salary) || 55000,
-      house_rent: Number(item.house_rent) || 27500,
-      medical_allowance: Number(item.medical_allowance) || 5500,
-      conveyance: Number(item.conveyance) || 4000,
-      gross: Number(item.gross_salary) || 92000,
-      pf_deduction: Number(item.pf_deduction) || 5500,
-      tax_deduction: Number(item.tax_deduction) || 4200,
-      net_payable: Number(item.net_payable) || 82300,
+      basic: Number(item.basic_salary ?? 0),
+      house_rent: Number(item.house_rent ?? 0),
+      medical_allowance: Number(item.medical_allowance ?? 0),
+      conveyance: Number(item.conveyance ?? 0),
+      gross: Number(item.gross_salary ?? 0),
+      pf_deduction: Number(item.pf_deduction ?? 0),
+      tax_deduction: Number(item.tax_deduction ?? 0),
+      net_payable: Number(item.net_payable ?? 0),
     },
   };
 }
@@ -132,7 +129,11 @@ export function EmployeeDirectoryView({
     initialSubTab === "add-employee",
   );
 
-  const [employees, setEmployees] = useState<Employee[]>(MOCK_EMPLOYEES);
+  const { data: employeeResponse, isLoading, isError } = useGetEmployeesQuery();
+  const [createEmployee] = useCreateEmployeeMutation();
+  const [updateEmployee] = useUpdateEmployeeMutation();
+  const [deleteEmployee] = useDeleteEmployeeMutation();
+  const employees = (employeeResponse?.data ?? []).map(mapApiRecordToEmployee);
   const [search, setSearch] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState("all");
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(
@@ -151,50 +152,14 @@ export function EmployeeDirectoryView({
   const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
   const pageSize = 15;
 
-  useEffect(() => {
-    let isMounted = true;
-    const fetchEmployees = async () => {
-      try {
-        const res = await fetch("http://127.0.0.1:8000/api/hrm/employees");
-        if (!res.ok) return;
-        const json: ApiResponse<EmployeeApiRecord[]> = await res.json();
-        if (json?.data && Array.isArray(json.data) && json.data.length > 0) {
-          const mapped: Employee[] = json.data.map((item: EmployeeApiRecord) =>
-            mapApiRecordToEmployee(item),
-          );
-          if (isMounted) {
-            setEmployees(mapped);
-          }
-        }
-      } catch (err) {
-        console.warn("Could not fetch remote employees, using local pool", err);
-      }
-    };
-
-    fetchEmployees();
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
   const handleCreateEmployee = async (payload: CreateEmployeePayload) => {
     setIsSubmitting(true);
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/hrm/employee-create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) {
-        throw new Error("Failed to register employee on server");
-      }
-
-      const json = await res.json();
+      const json = await createEmployee(payload).unwrap();
+      if (!json.status) throw new Error(json.message || 'Employee registration failed');
       const createdItem: EmployeeApiRecord = json.data;
       const newEmp = mapApiRecordToEmployee(createdItem);
 
-      setEmployees([newEmp, ...employees]);
       setIsAddModalOpen(false);
       toast.success(
         `Employee ${newEmp.name} (${newEmp.employee_full_id}) registered successfully!`,
@@ -217,30 +182,10 @@ export function EmployeeDirectoryView({
   ) => {
     setIsUpdating(true);
     try {
-      const res = await fetch(
-        `http://127.0.0.1:8000/api/hrm/employee-update/${id}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        },
-      );
-
-      if (!res.ok) {
-        throw new Error("Failed to update employee on server");
-      }
-
-      const json = await res.json();
+      const json = await updateEmployee({ id, data: payload }).unwrap();
+      if (!json.status) throw new Error(json.message || 'Employee update failed');
       const updatedRecord: EmployeeApiRecord = json.data;
       const updatedEmp = mapApiRecordToEmployee(updatedRecord);
-
-      setEmployees((prev) =>
-        prev.map((emp) =>
-          emp.id === id || emp.employee_full_id === String(id)
-            ? updatedEmp
-            : emp,
-        ),
-      );
 
       if (
         selectedEmployee &&
@@ -265,23 +210,8 @@ export function EmployeeDirectoryView({
   const handleDeleteEmployee = async (id: number | string) => {
     setIsDeleting(true);
     try {
-      const res = await fetch(
-        `http://127.0.0.1:8000/api/hrm/employee-delete/${id}`,
-        {
-          method: "POST",
-        },
-      );
-
-      if (!res.ok) {
-        throw new Error("Failed to delete employee on server");
-      }
-
-      setEmployees((prev) =>
-        prev.filter(
-          (emp) => emp.id !== id && emp.employee_full_id !== String(id),
-        ),
-      );
-
+      const json = await deleteEmployee(id).unwrap();
+      if (!json.status) throw new Error(json.message || 'Employee deactivation failed');
       if (
         selectedEmployee &&
         (selectedEmployee.id === id ||
@@ -335,6 +265,8 @@ export function EmployeeDirectoryView({
 
   return (
     <div className="space-y-6">
+      {isLoading && <Banner variant="info" title="Loading employees" description="Retrieving your company directory." />}
+      {isError && <Banner variant="danger" title="Directory unavailable" description="Employees could not be loaded. Check your connection and sign in again if needed." />}
       <PageHeader
         title="Employees"
         titleClassName="text-gray-700"
@@ -367,6 +299,9 @@ export function EmployeeDirectoryView({
         />
       )}
 
+      {activeSubTab !== 'directory' && process.env.NEXT_PUBLIC_ENABLE_DEMO_PREVIEWS !== 'true' ? (
+        <Banner variant="info" title="This employee tool is not available yet" description="Use the employee directory and approved payroll workflow for current records." />
+      ) : <>
       {activeSubTab === "birthdays" && <EmployeeBirthdaysTab />}
       {activeSubTab === "probation" && <EmployeeProbationTab />}
       {activeSubTab === "summary" && <EmployeeSummaryTab />}
@@ -375,6 +310,7 @@ export function EmployeeDirectoryView({
       {activeSubTab === "bulk-salary" && <EmployeeBulkSalaryTab />}
       {activeSubTab === "id-cards" && <EmployeeIdCardPrintTab />}
 
+      </>}
       {activeSubTab === "directory" && (
         <>
           {/* Search and Filters Bar with High Contrast */}
@@ -851,6 +787,7 @@ export function EmployeeDirectoryView({
 
       {/* Edit Employee Modal */}
       <EditEmployeeModal
+        key={editingEmployee?.employee_full_id || "edit-closed"}
         isOpen={Boolean(editingEmployee)}
         onClose={() => setEditingEmployee(null)}
         employee={editingEmployee}
@@ -869,6 +806,7 @@ export function EmployeeDirectoryView({
 
       {/* Role & Permissions Access Control Modal */}
       <ManagePermissionsModal
+        key={permissionsEmployee?.employee_full_id || "permissions-closed"}
         isOpen={Boolean(permissionsEmployee)}
         onClose={() => setPermissionsEmployee(null)}
         employee={permissionsEmployee}

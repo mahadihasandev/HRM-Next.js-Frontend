@@ -1,11 +1,11 @@
 import { baseApi } from "../baseApi";
 import { ApiResponse } from "../types";
-import { EmployeeProfile, EmployeeQueryParams } from "./types";
+import { EmployeeQueryParams } from "./types";
 import { CreateEmployeePayload, EmployeeApiRecord, UpdateEmployeePayload } from "@/types/hrm";
 
 export const employeeApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    getEmployees: builder.query<ApiResponse<EmployeeProfile[]>, EmployeeQueryParams | void>({
+    getEmployees: builder.query<ApiResponse<EmployeeApiRecord[]>, EmployeeQueryParams | void>({
       query: (params) => ({
         url: "/hrm/get-employees",
         params: params || {},

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { cn } from "@/lib/utils";
 import {
   Server,
@@ -179,11 +179,6 @@ export function DeviceIntegrationView({ initialSubTab }: DeviceIntegrationViewPr
     initialSubTab ? [initialSubTab] : ["devices", "logs"]
   );
 
-  useEffect(() => {
-    if (initialSubTab) {
-      setOpenSections([initialSubTab]);
-    }
-  }, [initialSubTab]);
 
   const [devices, setDevices] = useState<MachineDevice[]>(INITIAL_DEVICES);
   const [logs, setLogs] = useState<BiometricLog[]>(INITIAL_LOGS);

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { X, Pencil, Building2, Banknote, ShieldCheck, CheckCircle2 } from "lucide-react";
 import { Title, Subtitle, Button, Input, Label, Badge } from "@/components/shared";
 import { Employee, UpdateEmployeePayload } from "@/types/hrm";
@@ -35,55 +35,26 @@ export function EditEmployeeModal({
   onSubmit,
   isLoading = false,
 }: EditEmployeeModalProps) {
-  const [name, setName] = useState("");
-  const [designation, setDesignation] = useState("");
-  const [department, setDepartment] = useState(DEPARTMENTS[0]);
-  const [status, setStatus] = useState<"Active" | "Inactive" | "On Leave">("Active");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [personalPhone, setPersonalPhone] = useState("");
-  const [gender, setGender] = useState<"Male" | "Female" | "Other">("Male");
-  const [bloodGroup, setBloodGroup] = useState("B+");
-  const [maritalStatus, setMaritalStatus] = useState<"Single" | "Married" | "Other">("Married");
-  const [religion, setReligion] = useState("Islam");
-  const [basicSalary, setBasicSalary] = useState("50000");
-  const [joiningDate, setJoiningDate] = useState("");
-  const [dateOfBirth, setDateOfBirth] = useState("");
-  const [presentAddress, setPresentAddress] = useState("");
-  const [permanentAddress, setPermanentAddress] = useState("");
-  const [bankName, setBankName] = useState("Eastern Bank PLC");
-  const [bankAccountNo, setBankAccountNo] = useState("");
-  const [fatherName, setFatherName] = useState("");
-  const [motherName, setMotherName] = useState("");
-
-  useEffect(() => {
-    if (employee) {
-      setName(employee.name || "");
-      setDesignation(employee.designation || "");
-      setDepartment(employee.department || DEPARTMENTS[0]);
-      setStatus(employee.status || "Active");
-      setEmail(employee.email || "");
-      setPhone(employee.phone_number || "");
-      setPersonalPhone(employee.personal_phone_number || employee.phone_number || "");
-      setGender((employee.gender as "Male" | "Female" | "Other") || "Male");
-      setBloodGroup(employee.blood_group || "B+");
-      setMaritalStatus((employee.marital_status as "Single" | "Married" | "Other") || "Married");
-      setReligion(employee.religion || "Islam");
-      setBasicSalary(
-        employee.salary?.basic
-          ? String(employee.salary.basic)
-          : "50000"
-      );
-      setJoiningDate(employee.joining_date || "");
-      setDateOfBirth(employee.date_of_birth || "");
-      setPresentAddress(employee.present_address || "");
-      setPermanentAddress(employee.permanent_address || "");
-      setBankName(employee.bank_name || "Eastern Bank PLC");
-      setBankAccountNo(employee.bank_account_no || "");
-      setFatherName(employee.father_name || "");
-      setMotherName(employee.mother_name || "");
-    }
-  }, [employee]);
+  const [name, setName] = useState(employee?.name || "");
+  const [designation, setDesignation] = useState(employee?.designation || "");
+  const [department, setDepartment] = useState(employee?.department || DEPARTMENTS[0]);
+  const [status, setStatus] = useState<"Active" | "Inactive" | "On Leave">(employee?.status || "Active");
+  const [email, setEmail] = useState(employee?.email || "");
+  const [phone, setPhone] = useState(employee?.phone_number || "");
+  const [personalPhone, setPersonalPhone] = useState(employee?.personal_phone_number || employee?.phone_number || "");
+  const [gender, setGender] = useState<"Male" | "Female" | "Other">((employee?.gender as "Male" | "Female" | "Other") || "Male");
+  const [bloodGroup, setBloodGroup] = useState(employee?.blood_group || "B+");
+  const [maritalStatus, setMaritalStatus] = useState<"Single" | "Married" | "Other">((employee?.marital_status as "Single" | "Married" | "Other") || "Married");
+  const [religion, setReligion] = useState(employee?.religion || "Islam");
+  const [basicSalary, setBasicSalary] = useState(String(employee?.salary?.basic ?? 0));
+  const [joiningDate, setJoiningDate] = useState(employee?.joining_date || "");
+  const [dateOfBirth, setDateOfBirth] = useState(employee?.date_of_birth || "");
+  const [presentAddress, setPresentAddress] = useState(employee?.present_address || "");
+  const [permanentAddress, setPermanentAddress] = useState(employee?.permanent_address || "");
+  const [bankName, setBankName] = useState(employee?.bank_name || "");
+  const [bankAccountNo, setBankAccountNo] = useState(employee?.bank_account_no || "");
+  const [fatherName, setFatherName] = useState(employee?.father_name || "");
+  const [motherName, setMotherName] = useState(employee?.mother_name || "");
 
   if (!isOpen || !employee) return null;
 

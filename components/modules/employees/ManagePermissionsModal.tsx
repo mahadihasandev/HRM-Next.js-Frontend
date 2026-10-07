@@ -1,5 +1,7 @@
 "use client";
 
+import { requestHrm } from "@/lib/api/request";
+
 import { API_BASE_URL, getStoredAuthToken } from "@/lib/api/config";
 
 import React, { useState, useEffect, useMemo } from "react";
@@ -265,11 +267,11 @@ export function ManagePermissionsModal({
   const [effectivePerms, setEffectivePerms] = useState<Record<string, boolean>>({});
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<"all" | "commercial" | "workforce" | "action">("all");
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(isOpen);
   const [isSaving, setIsSaving] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [targetId, setTargetId] = useState<string>("");
+  const [targetId, setTargetId] = useState<string>(employee?.employee_full_id || String(employee?.id ?? ""));
 
   // Determine whether the logged-in operator is an Admin
   const computedIsAdmin =
@@ -277,27 +279,15 @@ export function ManagePermissionsModal({
       ? isAdmin
       : Boolean(operator?.department === "Administration" || operator?.fullId === "SMT-0001");
 
-  // Keep target ID in sync with employee prop
-  useEffect(() => {
-    if (employee) {
-      setTargetId(employee.employee_full_id || String(employee.id));
-    }
-  }, [employee]);
-
   // Fetch target employee permissions whenever modal opens or target changes
   useEffect(() => {
     if (!isOpen || !targetId) return;
 
     let isMounted = true;
-    setIsLoading(true);
-    setFeedback(null);
-    setErrorMessage(null);
-    setSearch("");
-    setCategoryFilter("all");
 
     const fetchPermissions = async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/hrm/permissions/employee/${targetId}`);
+        const res = await requestHrm(`${API_BASE_URL}/hrm/permissions/employee/${targetId}`);
         if (!res.ok) throw new Error("Failed to load permissions from API");
 
         const json: EmployeePermissionProfile = await res.json();
@@ -400,7 +390,7 @@ export function ManagePermissionsModal({
       const activeOperatorId = operator?.fullId || "SMT-0001";
       const activeOperatorName = operator?.name || "System Administrator";
 
-      const res = await fetch(`${API_BASE_URL}/hrm/permissions/employee/${targetId}`, {
+      const res = await requestHrm(`${API_BASE_URL}/hrm/permissions/employee/${targetId}`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${getStoredAuthToken()}`,

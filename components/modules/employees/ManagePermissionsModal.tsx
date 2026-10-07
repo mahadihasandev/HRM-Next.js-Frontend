@@ -1,5 +1,7 @@
 "use client";
 
+import { API_BASE_URL, getStoredAuthToken } from "@/lib/api/config";
+
 import React, { useState, useEffect, useMemo } from "react";
 import {
   X,
@@ -295,7 +297,7 @@ export function ManagePermissionsModal({
 
     const fetchPermissions = async () => {
       try {
-        const res = await fetch(`http://127.0.0.1:8000/api/hrm/permissions/employee/${targetId}`);
+        const res = await fetch(`${API_BASE_URL}/hrm/permissions/employee/${targetId}`);
         if (!res.ok) throw new Error("Failed to load permissions from API");
 
         const json: EmployeePermissionProfile = await res.json();
@@ -398,9 +400,10 @@ export function ManagePermissionsModal({
       const activeOperatorId = operator?.fullId || "SMT-0001";
       const activeOperatorName = operator?.name || "System Administrator";
 
-      const res = await fetch(`http://127.0.0.1:8000/api/hrm/permissions/employee/${targetId}`, {
+      const res = await fetch(`${API_BASE_URL}/hrm/permissions/employee/${targetId}`, {
         method: "POST",
         headers: {
+          Authorization: `Bearer ${getStoredAuthToken()}`,
           "Content-Type": "application/json",
           "X-Operator-Id": activeOperatorId,
           ...(computedIsAdmin ? { "X-Admin-Role": "admin" } : {}),

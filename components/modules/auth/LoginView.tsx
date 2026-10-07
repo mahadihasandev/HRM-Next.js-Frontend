@@ -1,5 +1,7 @@
 "use client";
 
+import { API_BASE_URL } from "@/lib/api/config";
+
 import React, { useState } from "react";
 import {
   Building2,
@@ -83,7 +85,7 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
     setErrorMessage(null);
     setIsSendingCode(true);
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/auth/send-verification-code", {
+      const res = await fetch(`${API_BASE_URL}/auth/send-verification-code`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Accept: "application/json" },
         body: JSON.stringify({ email: regEmail.trim() }),
@@ -116,7 +118,7 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
     setErrorMessage(null);
     setIsVerifyingCode(true);
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/auth/verify-code", {
+      const res = await fetch(`${API_BASE_URL}/auth/verify-code`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Accept: "application/json" },
         body: JSON.stringify({ email: regEmail.trim(), code: regCode.trim() }),
@@ -150,7 +152,7 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
     setErrorMessage(null);
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/register", {
+      const res = await fetch(`${API_BASE_URL}/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Accept: "application/json" },
         body: JSON.stringify({
@@ -207,7 +209,7 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
         : identifier.trim();
 
     try {
-      const response = await fetch("http://127.0.0.1:8000/api/login", {
+      const response = await fetch(`${API_BASE_URL}/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

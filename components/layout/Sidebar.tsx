@@ -26,6 +26,7 @@ import {
   Coins,
   Server,
   Award,
+  Factory,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -40,6 +41,7 @@ export type NavTab =
   | "attendance"
   | "leave"
   | "salary"
+  | "factory"
   | "accounting"
   | "snd"
   | "sfm"
@@ -184,10 +186,16 @@ export const NAV_MODULES: NavModule[] = [
   {
     id: "salary",
     label: "Salary & Payroll",
-    sub: "Vouchers & Payslips",
+    sub: "Imports, Approval & Bank Letters",
     icon: Banknote,
-    badge: "Oct",
+    badge: "Payroll",
     badgeVariant: "success",
+  },
+  {
+    id: "factory",
+    label: "Factory Operations",
+    sub: "Lines, Shifts & Production",
+    icon: Factory,
   },
   {
     id: "performance",
@@ -372,7 +380,7 @@ export function Sidebar({
                 Smart HRM <span className="text-[9px] px-1 py-0.2 bg-blue-600 text-white font-black rounded">BD</span>
               </h1>
               <p className="text-[9px] text-slate-400 font-semibold tracking-wide uppercase truncate">
-                Smart Group of Industries
+                People & factory operations
               </p>
             </div>
           </div>
@@ -394,7 +402,7 @@ export function Sidebar({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search ERP menus & features..."
+              placeholder="Search people & factory tools…"
               className="w-full bg-slate-900/90 text-white placeholder:text-slate-500 border border-slate-700/80 rounded-lg pl-8 pr-2.5 py-1.5 text-[11px] font-medium focus:outline-none focus:border-blue-500 transition-colors"
             />
             {searchQuery && (

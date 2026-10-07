@@ -1,5 +1,7 @@
 "use client";
 
+import { API_BASE_URL } from "@/lib/api/config";
+
 import React, { useState, useEffect, useCallback, useSyncExternalStore } from "react";
 import { Sidebar, NavTab } from "@/components/layout/Sidebar";
 import { TopNavbar, PERSONA_PRESETS } from "@/components/layout/TopNavbar";
@@ -10,6 +12,7 @@ import { AttendanceView } from "@/components/modules/attendance/AttendanceView";
 import { AllEmployeesTodayAttendanceView } from "@/components/modules/attendance/AllEmployeesTodayAttendanceView";
 import { LeaveManagementView } from "@/components/modules/leave/LeaveManagementView";
 import { SalaryPayrollView } from "@/components/modules/payroll/SalaryPayrollView";
+import { FactoryOperationsView } from "@/components/modules/factory/FactoryOperationsView";
 import { AccountingView } from "@/components/modules/accounting/AccountingView";
 import { RequestsView } from "@/components/modules/requests/RequestsView";
 import { LoansClaimsView } from "@/components/modules/loans-claims/LoansClaimsView";
@@ -107,7 +110,7 @@ export default function AppHome() {
         fullId.toLowerCase() === "admin"
           ? "SMT-0001"
           : fullId;
-      const res = await fetch(`http://127.0.0.1:8000/api/hrm/permissions/employee/${canonicalId}`);
+      const res = await fetch(`${API_BASE_URL}/hrm/permissions/employee/${canonicalId}`);
       if (!res.ok) return;
       const data: EmployeePermissionProfile = await res.json();
       if (data?.effective_permissions) {
@@ -127,7 +130,7 @@ export default function AppHome() {
           ? "SMT-0001"
           : fullId;
       const res = await fetch(
-        `http://127.0.0.1:8000/api/hrm/check-today-attendance?employee_full_id=${canonicalId}`
+        `${API_BASE_URL}/hrm/check-today-attendance?employee_full_id=${canonicalId}`
       );
       if (!res.ok) return;
       const json = await res.json();
@@ -159,8 +162,8 @@ export default function AppHome() {
     const loadRemoteData = async () => {
       try {
         const [permRes, attRes] = await Promise.allSettled([
-          fetch(`http://127.0.0.1:8000/api/hrm/permissions/employee/${canonicalId}`),
-          fetch(`http://127.0.0.1:8000/api/hrm/check-today-attendance?employee_full_id=${canonicalId}`),
+          fetch(`${API_BASE_URL}/hrm/permissions/employee/${canonicalId}`),
+          fetch(`${API_BASE_URL}/hrm/check-today-attendance?employee_full_id=${canonicalId}`),
         ]);
 
         if (!ignore && permRes.status === "fulfilled" && permRes.value.ok) {
@@ -203,7 +206,7 @@ export default function AppHome() {
     };
 
     try {
-      let res = await fetch("http://127.0.0.1:8000/api/hrm/punch-in", {
+      let res = await fetch(`${API_BASE_URL}/hrm/punch-in`, {
         method: "POST",
         headers: reqHeaders,
         body: JSON.stringify({
@@ -214,7 +217,7 @@ export default function AppHome() {
       });
 
       if (res.status === 404) {
-        res = await fetch("http://127.0.0.1:8000/api/v1/hrm/punch-in", {
+        res = await fetch(`${API_BASE_URL}/hrm/punch-in`, {
           method: "POST",
           headers: reqHeaders,
           body: JSON.stringify({
@@ -251,7 +254,7 @@ export default function AppHome() {
     };
 
     try {
-      let res = await fetch("http://127.0.0.1:8000/api/hrm/punch-out", {
+      let res = await fetch(`${API_BASE_URL}/hrm/punch-out`, {
         method: "POST",
         headers: reqHeaders,
         body: JSON.stringify({
@@ -261,7 +264,7 @@ export default function AppHome() {
       });
 
       if (res.status === 404) {
-        res = await fetch("http://127.0.0.1:8000/api/v1/hrm/punch-out", {
+        res = await fetch(`${API_BASE_URL}/hrm/punch-out`, {
           method: "POST",
           headers: reqHeaders,
           body: JSON.stringify({
@@ -345,10 +348,11 @@ export default function AppHome() {
     setIsGrantingQuick(true);
     try {
       const res = await fetch(
-        `http://127.0.0.1:8000/api/hrm/permissions/employee/${currentEmployee.fullId}`,
+        `${API_BASE_URL}/hrm/permissions/employee/${currentEmployee.fullId}`,
         {
           method: "POST",
           headers: {
+            Authorization: `Bearer ${effectiveToken}`,
             "Content-Type": "application/json",
             "X-Operator-Id": currentEmployee.fullId,
             "X-Admin-Role": "admin",
@@ -625,10 +629,13 @@ export default function AppHome() {
 
               {activeTab === "salary" && (
                 <SalaryPayrollView
+                  canManagePayroll={Boolean(permissions["action.salary.disburse"])}
                   currentOperator={currentEmployee}
                   isAdmin={isCurrentAdmin}
                 />
               )}
+
+              {activeTab === "factory" && <FactoryOperationsView canManage={isCurrentAdmin || Boolean(permissions["action.employees.edit"])} />}
 
               {activeTab === "accounting" && (
                 <AccountingView

@@ -8,10 +8,10 @@ export interface TitleProps extends React.HTMLAttributes<HTMLHeadingElement> {
 }
 
 const levelStyles: Record<1 | 2 | 3 | 4, string> = {
-  1: "text-3xl font-extrabold tracking-tight sm:text-4xl text-gray-700 dark:text-gray-700",
-  2: "text-2xl font-bold tracking-tight sm:text-3xl text-gray-700 dark:text-gray-700",
-  3: "text-xl font-bold tracking-tight text-gray-700 dark:text-gray-700",
-  4: "text-lg font-semibold tracking-normal text-gray-700 dark:text-gray-700",
+  1: "text-3xl font-semibold tracking-tight sm:text-4xl text-slate-900 dark:text-slate-100",
+  2: "text-2xl font-semibold tracking-tight sm:text-3xl text-slate-900 dark:text-slate-100",
+  3: "text-xl font-semibold tracking-tight text-slate-900 dark:text-slate-100",
+  4: "text-lg font-semibold tracking-normal text-slate-900 dark:text-slate-100",
 };
 
 export function Title({

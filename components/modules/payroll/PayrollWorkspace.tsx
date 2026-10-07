@@ -305,7 +305,7 @@ export function PayrollWorkspace({
           ))}
         </div>
       </div>
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         {[
           {
             title: "Net payroll",
@@ -341,7 +341,7 @@ export function PayrollWorkspace({
               </Text>
               <stat.icon className="size-4 text-teal-700" />
             </div>
-            <Text className="!text-xl sm:!text-2xl !font-semibold mt-4 tabular-nums break-all">
+            <Text className="!text-xl sm:!text-2xl !font-semibold mt-4 tabular-nums break-words">
               {stat.value}
             </Text>
             <Text

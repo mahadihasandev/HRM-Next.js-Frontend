@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 import {
   LayoutDashboard,
   Users,
@@ -14,20 +14,19 @@ import {
   PiggyBank,
   Bell,
   Settings,
-  ShieldCheck,
   ChevronDown,
-  ChevronRight,
   Store,
   Compass,
   X,
-  Search,
   Sliders,
   UserPlus,
   Coins,
   Server,
   Award,
+  Factory,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { BrandMark, SearchInput, Text } from "@/components/shared";
 
 export type NavTab =
   | "dashboard"
@@ -40,6 +39,7 @@ export type NavTab =
   | "attendance"
   | "leave"
   | "salary"
+  | "factory"
   | "accounting"
   | "snd"
   | "sfm"
@@ -73,6 +73,7 @@ export interface SidebarProps {
   onTabChange: (tab: NavTab, subOption?: string) => void;
   employeeId?: string;
   employeeName?: string;
+  department?: string;
   permissions?: Record<string, boolean>;
   isOpen?: boolean;
   onClose?: () => void;
@@ -88,17 +89,15 @@ export const NAV_MODULES: NavModule[] = [
   {
     id: "today-attendance",
     label: "Today's Attendance",
-    sub: "All 68 Staff Live Roster",
+    sub: "Daily workforce roster",
     icon: CalendarCheck,
-    badge: "Live",
     badgeVariant: "success",
   },
   {
     id: "employees",
-    label: "Employee Directory & Profiles",
+    label: "Employees",
     sub: "Workforce & Profiles",
     icon: Users,
-    badge: "68 Staff",
     badgeVariant: "default",
     subItems: [
       { id: "directory", label: "Master Employee Directory" },
@@ -113,10 +112,9 @@ export const NAV_MODULES: NavModule[] = [
   },
   {
     id: "hr-setup",
-    label: "Enterprise HR Setup & Compliance",
+    label: "HR setup",
     sub: "17 Master Modules",
     icon: Sliders,
-    badge: "Master",
     badgeVariant: "default",
     subItems: [
       { id: "holiday", label: "Holiday Calendar & Off-Days" },
@@ -132,10 +130,9 @@ export const NAV_MODULES: NavModule[] = [
   },
   {
     id: "recruitment",
-    label: "Recruitment & ATS",
+    label: "Recruitment",
     sub: "Job Openings & Candidates",
     icon: UserPlus,
-    badge: "ATS",
     badgeVariant: "success",
     subItems: [
       { id: "jobs", label: "Active Job Circulars" },
@@ -147,7 +144,6 @@ export const NAV_MODULES: NavModule[] = [
     label: "Sales Commission",
     sub: "Incentive Calculation",
     icon: Coins,
-    badge: "Incentives",
     badgeVariant: "success",
     subItems: [
       { id: "generate", label: "Commission Calculation" },
@@ -157,10 +153,9 @@ export const NAV_MODULES: NavModule[] = [
   },
   {
     id: "devices-logs",
-    label: "Biometric & Machines",
+    label: "Devices & logs",
     sub: "ADMS Push & Terminals",
     icon: Server,
-    badge: "153k Logs",
     badgeVariant: "default",
     subItems: [
       { id: "devices", label: "Networked Machine Devices" },
@@ -169,32 +164,35 @@ export const NAV_MODULES: NavModule[] = [
   },
   {
     id: "attendance",
-    label: "My Attendance & Bio",
+    label: "My attendance",
     sub: "Personal Punch Card & Logs",
     icon: Clock,
   },
   {
     id: "leave",
-    label: "Leave Management",
-    sub: "BLA 2006 Statutory Leaves",
+    label: "Leave management",
+    sub: "Applications & balances",
     icon: CalendarRange,
-    badge: "3 Pending",
     badgeVariant: "warning",
   },
   {
     id: "salary",
-    label: "Salary & Payroll",
-    sub: "Vouchers & Payslips",
+    label: "Payroll",
+    sub: "Imports, Approval & Bank Letters",
     icon: Banknote,
-    badge: "Oct",
     badgeVariant: "success",
   },
   {
+    id: "factory",
+    label: "Factory operations",
+    sub: "Lines, Shifts & Production",
+    icon: Factory,
+  },
+  {
     id: "performance",
-    label: "Performance & Letters",
+    label: "Performance & letters",
     sub: "Discipline, Awards & Letters",
     icon: Award,
-    badge: "Letters",
     badgeVariant: "default",
     subItems: [
       { id: "letters", label: "Official Letters Generator" },
@@ -204,10 +202,9 @@ export const NAV_MODULES: NavModule[] = [
   },
   {
     id: "accounting",
-    label: "Accounting & Finance",
+    label: "Finance",
     sub: "Ledgers & Vouchers",
     icon: Landmark,
-    badge: "NBR",
     badgeVariant: "success",
   },
   {
@@ -215,7 +212,6 @@ export const NAV_MODULES: NavModule[] = [
     label: "SND Distribution",
     sub: "Dealers & Outlets Network",
     icon: Store,
-    badge: "Live",
     badgeVariant: "default",
   },
   {
@@ -223,12 +219,11 @@ export const NAV_MODULES: NavModule[] = [
     label: "SFM Field Force",
     sub: "Territories & Targets",
     icon: Compass,
-    badge: "New",
     badgeVariant: "success",
   },
   {
     id: "requests",
-    label: "Short Leave & IOM",
+    label: "Requests & IOM",
     sub: "Movement & Shift Delay",
     icon: Clock,
   },
@@ -246,22 +241,54 @@ export const NAV_MODULES: NavModule[] = [
   },
   {
     id: "loans",
-    label: "Loans & Advance",
+    label: "Loans & advances",
     sub: "Company Advances & EMI",
     icon: PiggyBank,
   },
   {
     id: "notices",
-    label: "Circulars & Notices",
+    label: "Notices",
     sub: "Company Bulletin Board",
     icon: Bell,
-    badge: "8",
   },
   {
     id: "settings",
-    label: "API & Device Sync",
+    label: "Integrations",
     sub: "Connection & Credentials",
     icon: Settings,
+  },
+];
+
+const NAV_GROUPS: { label: string; tabs: NavTab[] }[] = [
+  {
+    label: "WORKSPACE",
+    tabs: [
+      "dashboard",
+      "employees",
+      "today-attendance",
+      "leave",
+      "salary",
+      "factory",
+    ],
+  },
+  {
+    label: "PEOPLE OPERATIONS",
+    tabs: [
+      "recruitment",
+      "performance",
+      "hr-setup",
+      "shifts",
+      "devices-logs",
+      "notices",
+    ],
+  },
+  {
+    label: "SELF SERVICE",
+    tabs: ["attendance", "requests", "loans", "outwork"],
+  },
+  {
+    label: "BUSINESS",
+    tabs: ["accounting", "commission", "snd", "sfm", "settings"],
   },
 ];
 
@@ -269,352 +296,267 @@ export function Sidebar({
   activeTab,
   activeSubOption,
   onTabChange,
-  employeeId = "SMT-0051",
-  employeeName = "Abdul Halim",
+  employeeId = "",
+  employeeName = "",
+  department = "",
   permissions,
   isOpen = false,
   onClose,
 }: SidebarProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  // Track open accordions in sidebar
-  const [openAccordions, setOpenAccordions] = useState<Record<string, boolean>>({
-    "hr-setup": false,
-    employees: true,
-    recruitment: false,
-    commission: false,
-    "devices-logs": false,
-    performance: false,
-  });
-
-  const toggleAccordion = (id: string) => {
-    setOpenAccordions((prev) => ({
-      ...prev,
-      [id]: !prev[id],
-    }));
-  };
-
-  const handleExpandAll = () => {
-    const allOpen: Record<string, boolean> = {};
-    NAV_MODULES.forEach((m) => {
-      if (m.subItems) allOpen[m.id] = true;
-    });
-    setOpenAccordions(allOpen);
-  };
-
-  const handleCollapseAll = () => {
-    setOpenAccordions({});
-  };
-
-  // Filter modules based on search and permissions
+  const [openAccordions, setOpenAccordions] = useState<Record<string, boolean>>(
+    {},
+  );
+  const drawer = useRef<HTMLElement>(null);
+  const closeButton = useRef<HTMLButtonElement>(null);
+  const isSearching = searchQuery.trim().length > 0;
   const filteredModules = useMemo(() => {
-    const query = searchQuery.toLowerCase().trim();
+    const query = searchQuery.trim().toLowerCase();
+    return NAV_MODULES.filter(
+      (module) =>
+        permissions?.[`module.${module.id}`] !== false &&
+        (!query ||
+          [
+            module.label,
+            module.sub,
+            ...(module.subItems?.map((item) => item.label) || []),
+          ].some((value) => value?.toLowerCase().includes(query))),
+    );
+  }, [permissions, searchQuery]);
 
-    return NAV_MODULES.filter((module) => {
-      // RBAC check
-      if (permissions) {
-        const permKey = `module.${module.id}`;
-        if (permKey in permissions && !permissions[permKey]) {
-          return false;
-        }
+  useEffect(() => {
+    if (!isOpen) return;
+    const previous =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    closeButton.current?.focus();
+    const keydown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose?.();
+      if (event.key !== "Tab") return;
+      const elements = Array.from(
+        drawer.current?.querySelectorAll<HTMLElement>(
+          'button, input, [tabindex="0"]',
+        ) || [],
+      ).filter((element) => element.getClientRects().length);
+      const first = elements[0],
+        last = elements[elements.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last?.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first?.focus();
       }
+    };
+    document.addEventListener("keydown", keydown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", keydown);
+      previous?.focus();
+    };
+  }, [isOpen, onClose]);
 
-      if (!query) return true;
-
-      // Check module label and sub
-      if (
-        module.label.toLowerCase().includes(query) ||
-        (module.sub && module.sub.toLowerCase().includes(query))
-      ) {
-        return true;
-      }
-
-      // Check sub items
-      if (module.subItems) {
-        return module.subItems.some((sub) =>
-          sub.label.toLowerCase().includes(query)
-        );
-      }
-
-      return false;
-    });
-  }, [searchQuery, permissions]);
-
-  // Auto-expand accordions if search query is active
-  const isSearchActive = searchQuery.trim().length > 0;
-
+  const navigate = (tab: NavTab, sub?: string) => {
+    onTabChange(tab, sub);
+    onClose?.();
+  };
   return (
     <>
-      {/* Mobile Drawer Backdrop Overlay */}
       {isOpen && (
         <div
           onClick={onClose}
-          className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs z-50 lg:hidden transition-opacity duration-300"
+          className="fixed inset-0 z-50 bg-slate-950/30 backdrop-blur-sm lg:hidden"
           aria-hidden="true"
         />
       )}
-
-      {/* Main Navigation Sidebar */}
       <aside
+        ref={drawer}
+        aria-label="Main navigation"
+        role={isOpen ? "dialog" : undefined}
+        aria-modal={isOpen ? true : undefined}
         className={cn(
-          "w-72 sm:w-80 lg:w-64 bg-[#0b1329] border-r border-slate-800 flex flex-col shrink-0 h-screen select-none text-white transition-transform duration-300 ease-in-out overflow-hidden",
-          "fixed inset-y-0 left-0 z-50 lg:sticky lg:top-0 lg:h-screen lg:self-start lg:z-30 shadow-2xl",
-          isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+          "hrm-sidebar fixed inset-y-0 left-0 z-50 flex h-dvh w-[280px] max-w-[calc(100vw-40px)] shrink-0 flex-col border-r border-slate-200/80 bg-white transition-transform duration-200 lg:sticky lg:top-0 lg:z-30 lg:max-w-none",
+          isOpen
+            ? "translate-x-0"
+            : "invisible -translate-x-full lg:visible lg:translate-x-0",
         )}
       >
-        {/* Brand Header */}
-        <div className="h-16 flex items-center justify-between px-4 border-b border-slate-800 bg-[#080e1e] shrink-0">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="h-9 w-9 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold shadow-md shadow-blue-600/40 shrink-0">
-              <ShieldCheck className="h-5 w-5" />
-            </div>
-            <div className="min-w-0">
-              <h1 className="font-extrabold text-white text-sm leading-tight tracking-tight flex items-center gap-1.5">
-                Smart HRM <span className="text-[9px] px-1 py-0.2 bg-blue-600 text-white font-black rounded">BD</span>
-              </h1>
-              <p className="text-[9px] text-slate-400 font-semibold tracking-wide uppercase truncate">
-                Smart Group of Industries
-              </p>
-            </div>
+        <div className="flex h-20 shrink-0 items-center gap-3 px-6">
+          <BrandMark />
+          <div className="flex-1">
+            <Text className="!text-lg !font-semibold !tracking-tight">
+              Smart HRM<span className="text-teal-700">.</span>
+            </Text>
+            <Text
+              variant="caption"
+              className="!text-[10px] !font-normal !text-slate-500"
+            >
+              PEOPLE & FACTORY OPERATIONS
+            </Text>
           </div>
-
           <button
+            ref={closeButton}
+            type="button"
             onClick={onClose}
-            className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer shrink-0 ml-1"
             aria-label="Close navigation"
+            className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 lg:hidden"
           >
-            <X className="h-5 w-5" />
+            <X className="size-4" />
           </button>
         </div>
-
-        {/* Search & Accordion Controls */}
-        <div className="px-3 pt-3 pb-2 border-b border-slate-800/80 bg-[#091024] shrink-0 space-y-2">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search ERP menus & features..."
-              className="w-full bg-slate-900/90 text-white placeholder:text-slate-500 border border-slate-700/80 rounded-lg pl-8 pr-2.5 py-1.5 text-[11px] font-medium focus:outline-none focus:border-blue-500 transition-colors"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                className="absolute right-2 top-2 text-slate-400 hover:text-white"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            )}
-          </div>
-
-          <div className="flex items-center justify-between text-[10px] text-slate-400 px-1 font-semibold">
-            <span>ENTERPRISE NAVIGATOR</span>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleExpandAll}
-                className="hover:text-blue-400 transition-colors cursor-pointer"
-                title="Expand All Accordions"
-              >
-                Expand
-              </button>
-              <span>&bull;</span>
-              <button
-                onClick={handleCollapseAll}
-                className="hover:text-blue-400 transition-colors cursor-pointer"
-                title="Collapse All Accordions"
-              >
-                Collapse
-              </button>
-            </div>
-          </div>
+        <div className="px-5 pb-4">
+          <SearchInput
+            value={searchQuery}
+            onChange={setSearchQuery}
+            placeholder="Find a module…"
+            aria-label="Search navigation"
+            className="!h-9 !text-xs !bg-slate-50"
+          />
         </div>
-
-        {/* Navigation Accordion Scroll Area */}
-        <nav className="flex-1 px-2.5 py-2 space-y-1 overflow-y-auto sidebar-scrollbar">
-          {filteredModules.length === 0 ? (
-            <div className="p-4 rounded-xl bg-slate-900/90 border border-slate-800 text-center my-4 mx-1">
-              <p className="text-xs font-bold text-slate-300 mb-1">No matching menus</p>
-              <p className="text-[11px] text-slate-500">
-                Try searching for keywords like &ldquo;bank&rdquo;, &ldquo;salary&rdquo;, or &ldquo;probation&rdquo;.
-              </p>
-            </div>
-          ) : (
-            filteredModules.map((item) => {
-              const Icon = item.icon;
-              const hasSub = Boolean(item.subItems && item.subItems.length > 0);
-              const isAccordionOpen = isSearchActive || Boolean(openAccordions[item.id]);
-              const isParentActive = activeTab === item.id;
-
-              return (
-                <div key={item.id} className="space-y-0.5">
-                  {/* Module Header / Trigger */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (hasSub) {
-                        setOpenAccordions((prev) => ({
-                          ...prev,
-                          [item.id]: isParentActive ? !prev[item.id] : true,
-                        }));
-                        const defaultSub = item.id === "employees" ? "directory" : item.subItems?.[0]?.id;
-                        onTabChange(item.id, defaultSub);
-                      } else {
-                        onTabChange(item.id);
-                        if (onClose) onClose();
-                      }
-                    }}
-                    className={cn(
-                      "w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs font-bold transition-all group cursor-pointer text-left",
-                      isParentActive && !hasSub
-                        ? "bg-blue-600 text-white shadow-md shadow-blue-600/30"
-                        : isParentActive && hasSub
-                        ? "bg-slate-800/90 text-white border border-slate-700/60"
-                        : "text-slate-300 hover:text-white hover:bg-slate-800/60"
-                    )}
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div
-                        className={cn(
-                          "h-6 w-6 rounded-lg flex items-center justify-center shrink-0 transition-colors",
-                          isParentActive
-                            ? "bg-blue-600 text-white"
-                            : "bg-slate-800/80 text-slate-400 group-hover:text-white group-hover:bg-slate-700"
-                        )}
-                      >
-                        <Icon className="h-3.5 w-3.5" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="truncate font-bold text-xs leading-tight">
-                          {item.label}
-                        </div>
-                        {item.sub && (
-                          <div
-                            className={cn(
-                              "text-[9px] leading-none truncate mt-0.5",
-                              isParentActive ? "text-blue-200" : "text-slate-400 group-hover:text-slate-300"
-                            )}
-                          >
-                            {item.sub}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-1.5 shrink-0 ml-1.5">
-                      {item.badge && (
-                        <span
+        <nav
+          className="flex-1 overflow-y-auto px-4 pb-5"
+          aria-label="Workspace modules"
+        >
+          {NAV_GROUPS.map((group) => {
+            const modules = group.tabs
+              .map((id) => filteredModules.find((module) => module.id === id))
+              .filter((item): item is NavModule => Boolean(item));
+            if (!modules.length) return null;
+            return (
+              <div key={group.label} className="mb-5">
+                <Text
+                  variant="caption"
+                  className="px-3 pb-2 !text-[10px] !font-medium !tracking-[.12em] !text-slate-400"
+                >
+                  {group.label}
+                </Text>
+                <div className="space-y-1">
+                  {modules.map((module) => {
+                    const active = activeTab === module.id;
+                    const expanded = openAccordions[module.id] ?? active;
+                    const showChildren =
+                      module.subItems && (expanded || isSearching);
+                    const Icon = module.icon;
+                    return (
+                      <div key={module.id}>
+                        <div
                           className={cn(
-                            "text-[9px] px-1.5 py-0.5 rounded font-extrabold leading-none",
-                            item.badgeVariant === "warning"
-                              ? "bg-amber-500 text-slate-950 font-black"
-                              : item.badgeVariant === "success"
-                              ? "bg-emerald-500 text-slate-950 font-black"
-                              : "bg-slate-800 text-slate-200 border border-slate-700"
+                            "flex items-center rounded-xl transition-colors",
+                            active
+                              ? "bg-teal-50 text-teal-800"
+                              : "text-slate-600 hover:bg-slate-50 hover:text-slate-900",
                           )}
                         >
-                          {item.badge}
-                        </span>
-                      )}
-
-                      {hasSub ? (
-                        <div
-                          role="button"
-                          tabIndex={0}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleAccordion(item.id);
-                          }}
-                          className="p-1 rounded hover:bg-slate-700/60 text-slate-400 hover:text-white transition-colors cursor-pointer"
-                        >
-                          <ChevronDown
-                            className={cn(
-                              "h-3.5 w-3.5 transition-transform duration-200",
-                              isAccordionOpen && "rotate-180 text-blue-400"
-                            )}
-                          />
-                        </div>
-                      ) : (
-                        isParentActive && (
-                          <ChevronRight className="h-3.5 w-3.5 text-white shrink-0" />
-                        )
-                      )}
-                    </div>
-                  </button>
-
-                  {/* Accordion Sub-Items with Tree Indentation */}
-                  {hasSub && isAccordionOpen && (
-                    <div className="ml-5 pl-2.5 border-l-2 border-slate-700/60 space-y-0.5 py-1 animate-in fade-in duration-150">
-                      {item.subItems?.map((sub) => {
-                        const isSubActive =
-                          isParentActive &&
-                          (activeSubOption === sub.id ||
-                            (!activeSubOption &&
-                              (sub.id === "directory" || sub.id === item.subItems?.[0]?.id)));
-
-                        return (
                           <button
-                            key={sub.id}
                             type="button"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              onTabChange(item.id, sub.id);
-                              if (onClose) onClose();
-                            }}
-                            className={cn(
-                              "w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all cursor-pointer text-left group",
-                              isSubActive
-                                ? "bg-blue-600 text-white font-extrabold shadow-xs"
-                                : item.id === "hr-setup"
-                                ? "text-gray-700 hover:text-white hover:bg-slate-800/50"
-                                : "text-slate-400 hover:text-white hover:bg-slate-800/50"
-                            )}
+                            onClick={() => navigate(module.id)}
+                            aria-current={active ? "page" : undefined}
+                            className="flex min-w-0 flex-1 items-center gap-3 rounded-xl px-3 py-2.5 text-left text-[13px] font-medium"
                           >
-                            <span className={cn("truncate flex items-center gap-2", item.id === "hr-setup" && !isSubActive && "text-gray-700")}>
-                              <span
-                                className={cn(
-                                  "h-1.5 w-1.5 rounded-full shrink-0 transition-colors",
-                                  isSubActive
-                                    ? "bg-white"
-                                    : "bg-slate-600 group-hover:bg-slate-300"
-                                )}
-                              />
-                              {sub.label}
-                            </span>
-                            {sub.badge && (
-                              <span className="text-[9px] px-1 py-0.2 rounded bg-slate-800 text-slate-300 font-mono">
-                                {sub.badge}
+                            <Icon
+                              className={cn(
+                                "size-[18px] shrink-0",
+                                active ? "text-teal-700" : "text-slate-400",
+                              )}
+                            />
+                            <span className="truncate">{module.label}</span>
+                            {module.id === "factory" && (
+                              <span className="ml-auto rounded bg-teal-100 px-1.5 py-0.5 text-[9px] font-semibold text-teal-800">
+                                RMG
                               </span>
                             )}
                           </button>
-                        );
-                      })}
-                    </div>
-                  )}
+                          {module.subItems && (
+                            <button
+                              type="button"
+                              aria-label={`${expanded ? "Collapse" : "Expand"} ${module.label}`}
+                              aria-expanded={expanded || isSearching}
+                              onClick={() =>
+                                setOpenAccordions((previous) => ({
+                                  ...previous,
+                                  [module.id]: !expanded,
+                                }))
+                              }
+                              className="mr-1 rounded-lg p-2 hover:bg-teal-100/50"
+                            >
+                              <ChevronDown
+                                className={cn(
+                                  "size-3.5 transition-transform",
+                                  showChildren && "rotate-180",
+                                )}
+                              />
+                            </button>
+                          )}
+                        </div>
+                        {showChildren && (
+                          <div className="ml-[21px] mt-1 border-l border-slate-200 pl-3">
+                            {module.subItems
+                              ?.filter(
+                                (item) =>
+                                  !isSearching ||
+                                  module.label
+                                    .toLowerCase()
+                                    .includes(searchQuery.toLowerCase()) ||
+                                  item.label
+                                    .toLowerCase()
+                                    .includes(searchQuery.toLowerCase()),
+                              )
+                              .map((item) => (
+                                <button
+                                  type="button"
+                                  key={item.id}
+                                  aria-current={
+                                    active && activeSubOption === item.id
+                                      ? "page"
+                                      : undefined
+                                  }
+                                  onClick={() => navigate(module.id, item.id)}
+                                  className={cn(
+                                    "my-0.5 block w-full rounded-lg px-3 py-2 text-left text-xs leading-relaxed",
+                                    active && activeSubOption === item.id
+                                      ? "bg-teal-50 font-medium text-teal-800"
+                                      : "text-slate-500 hover:bg-slate-50 hover:text-slate-900",
+                                  )}
+                                >
+                                  {item.label}
+                                </button>
+                              ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
-              );
-            })
+              </div>
+            );
+          })}
+          {!filteredModules.length && (
+            <Text variant="muted" className="p-3 !text-xs">
+              No modules match your search.
+            </Text>
           )}
         </nav>
-
-        {/* User Info Footer */}
-        <div className="p-3 border-t border-slate-800 bg-[#070c1a] shrink-0">
-          <div className="flex items-center gap-2.5 p-2 rounded-xl bg-slate-900/90 border border-slate-800">
-            <div className="h-8 w-8 rounded-xl bg-blue-600 text-white flex items-center justify-center font-extrabold text-xs shadow-md shrink-0">
-              {employeeId.slice(0, 3)}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-bold text-white truncate">
-                {employeeName}
-              </p>
-              <p className="text-[9px] text-slate-400 truncate font-mono font-semibold">
-                {employeeId} &bull; Senior HR Exec
-              </p>
-            </div>
-            <div
-              className="h-2 w-2 rounded-full bg-emerald-400 ring-2 ring-emerald-950 shrink-0"
-              title="Connected to ZKTeco"
-            />
+        <div className="mx-4 mb-4 flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-teal-100 text-xs font-semibold text-teal-800">
+            {employeeName
+              .split(" ")
+              .map((part) => part[0])
+              .slice(0, 2)
+              .join("")}
+          </span>
+          <div className="min-w-0">
+            <Text className="truncate !text-xs !font-semibold">
+              {employeeName}
+            </Text>
+            <Text
+              variant="caption"
+              className="mt-1 truncate !text-[10px] !font-normal !text-slate-500"
+            >
+              {department || employeeId}
+            </Text>
           </div>
         </div>
       </aside>

@@ -8,3 +8,5 @@ export * from "./Layout";
 export * from "./Media";
 export * from "./Banner";
 export * from "./Accordion";
+
+export { BrandMark } from "./Brand/BrandMark";

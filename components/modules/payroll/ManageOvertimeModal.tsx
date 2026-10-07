@@ -1,38 +1,31 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState } from "react";
 import toast from "react-hot-toast";
 import {
   X,
   Clock,
   ShieldCheck,
   ShieldAlert,
-  Save,
   Sparkles,
-  Calculator,
   Search,
-  Filter,
-  CheckCircle2,
-  AlertCircle,
   History,
-  TrendingUp,
-  Banknote,
-  Users,
 } from "lucide-react";
 import {
   Title,
   Subtitle,
   Button,
   Badge,
-  CardWrapper,
   Banner,
 } from "@/components/shared";
+import { OvertimeEmployeeItem } from "@/types/hrm";
+
 import {
-  OvertimeEmployeeItem,
-  OvertimeRatesData,
-  OvertimeRateLogItem,
-  ApiResponse,
-} from "@/types/hrm";
+  useOvertimeRatesQuery,
+  useOvertimeLogsQuery,
+  useSetOvertimeRateMutation,
+  useBulkOvertimeRatesMutation,
+} from "@/store/services/payroll/overtimeApi";
 
 interface ManageOvertimeModalProps {
   isOpen: boolean;
@@ -52,9 +45,12 @@ export function ManageOvertimeModal({
   operator,
   onRateUpdated,
 }: ManageOvertimeModalProps) {
-  const [data, setData] = useState<OvertimeRatesData | null>(null);
-  const [logs, setLogs] = useState<OvertimeRateLogItem[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const ratesQuery = useOvertimeRatesQuery(undefined, { skip: !isOpen });
+  const logsQuery = useOvertimeLogsQuery(undefined, { skip: !isOpen });
+  const [setRate] = useSetOvertimeRateMutation();
+  const [bulkSet] = useBulkOvertimeRatesMutation();
+  const data = ratesQuery.data?.data;
+  const logs = logsQuery.data?.data || [];
   const [search, setSearch] = useState("");
   const [selectedDept, setSelectedDept] = useState("all");
   const [activeTab, setActiveTab] = useState<"rates" | "logs">("rates");
@@ -73,47 +69,8 @@ export function ManageOvertimeModal({
     operator.department === "Human Resources" ||
     operator.fullId === "SMT-0001";
 
-  const fetchRates = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const res = await fetch("http://127.0.0.1:8000/api/hrm/overtime/rates");
-      if (!res.ok) return;
-      const json: ApiResponse<OvertimeRatesData> = await res.json();
-      if (json?.data) {
-        setData(json.data);
-        // Prepopulate input fields
-        const initialInputs: Record<string, string> = {};
-        json.data.employees.forEach((emp) => {
-          initialInputs[emp.employee_full_id] = String(emp.active_effective_rate);
-        });
-        setRateInputs(initialInputs);
-      }
-    } catch (err: unknown) {
-      console.warn("Could not fetch overtime rates", err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  const fetchLogs = useCallback(async () => {
-    try {
-      const res = await fetch("http://127.0.0.1:8000/api/hrm/overtime/logs");
-      if (!res.ok) return;
-      const json: ApiResponse<OvertimeRateLogItem[]> = await res.json();
-      if (json?.data && Array.isArray(json.data)) {
-        setLogs(json.data);
-      }
-    } catch {
-      // ignore
-    }
-  }, []);
-
-  useEffect(() => {
-    if (isOpen) {
-      fetchRates();
-      fetchLogs();
-    }
-  }, [isOpen, fetchRates, fetchLogs]);
+  const fetchRates = () => ratesQuery.refetch();
+  const fetchLogs = () => logsQuery.refetch();
 
   if (!isOpen) return null;
 
@@ -123,44 +80,39 @@ export function ManageOvertimeModal({
       setFeedback({
         variant: "danger",
         title: "Access Denied",
-        message: "Only Admin, HR, and High Officials can configure employee overtime rates.",
+        message:
+          "Only Admin, HR, and High Officials can configure employee overtime rates.",
       });
       return;
     }
 
-    const rateVal = parseFloat(rateInputs[emp.employee_full_id]);
+    const rateVal = parseFloat(
+      rateInputs[emp.employee_full_id] ?? String(emp.active_effective_rate),
+    );
     if (isNaN(rateVal) || rateVal < 0) {
       setFeedback({
         variant: "warning",
         title: "Invalid Rate",
-        message: "Please enter a valid non-negative hourly overtime rate (৳/hr).",
+        message:
+          "Please enter a valid non-negative hourly overtime rate (৳/hr).",
       });
       return;
     }
 
     setSavingId(emp.employee_full_id);
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/hrm/overtime/set-rate", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Operator-Id": operator.fullId,
-          "X-Admin-Role": isAuthorizedManager ? "admin" : "employee",
-        },
-        body: JSON.stringify({
-          employee_full_id: emp.employee_full_id,
-          overtime_rate: rateVal,
-          reason: `Rate updated to ৳${rateVal}/hr by ${operator.name} (${operator.department})`,
-          operator_id: operator.fullId,
-        }),
-      });
+      const json = await setRate({
+        employee_full_id: emp.employee_full_id,
+        overtime_rate: rateVal,
+        reason: `Rate updated to ৳${rateVal}/hr by ${operator.name} (${operator.department})`,
+        operator_id: operator.fullId,
+      }).unwrap();
 
-      const json = await res.json();
-      if (res.ok && json.status) {
+      if (json.status === true) {
         setFeedback({
           variant: "success",
           title: "Overtime Rate Updated",
-          message: `Overtime rate for ${emp.name} is now ৳${rateVal}/hr. Monthly salary payslips automatically updated!`,
+          message: `Overtime rate for ${emp.name} is now ৳${rateVal}/hr. Existing approved payroll snapshots remain unchanged.`,
         });
         await fetchRates();
         await fetchLogs();
@@ -195,13 +147,15 @@ export function ManageOvertimeModal({
   // Bulk Apply BLA Standard to all employees in the view
   const handleBulkApplyBla = async () => {
     if (!isAuthorizedManager) {
-      toast.error("Access Denied: Only Admin, HR, and High Officials can configure employee overtime rates.");
+      toast.error(
+        "Access Denied: Only Admin, HR, and High Officials can configure employee overtime rates.",
+      );
       return;
     }
 
     if (
       !confirm(
-        "Are you sure you want to apply the Bangladesh Labor Act (BLA 2006) 2x Basic/208 statutory rate to all active employees?"
+        "Are you sure you want to apply the Bangladesh Labor Act (BLA 2006) 2x Basic/208 statutory rate to all active employees?",
       )
     ) {
       return;
@@ -209,21 +163,12 @@ export function ManageOvertimeModal({
 
     setIsBulkApplying(true);
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/hrm/overtime/bulk-set", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Operator-Id": operator.fullId,
-          "X-Admin-Role": "admin",
-        },
-        body: JSON.stringify({
-          mode: "bla_standard",
-          operator_id: operator.fullId,
-        }),
-      });
+      const json = await bulkSet({
+        mode: "bla_standard",
+        operator_id: operator.fullId,
+      }).unwrap();
 
-      const json = await res.json();
-      if (res.ok && json.status) {
+      if (json.status === true) {
         setFeedback({
           variant: "success",
           title: "BLA Statutory Rates Applied",
@@ -242,7 +187,8 @@ export function ManageOvertimeModal({
 
   // Filter employees
   const filteredEmployees = (data?.employees || []).filter((emp) => {
-    const matchesDept = selectedDept === "all" || emp.department === selectedDept;
+    const matchesDept =
+      selectedDept === "all" || emp.department === selectedDept;
     const matchesSearch =
       search === "" ||
       emp.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -252,7 +198,7 @@ export function ManageOvertimeModal({
   });
 
   const departments = Array.from(
-    new Set((data?.employees || []).map((e) => e.department))
+    new Set((data?.employees || []).map((e) => e.department)),
   ).filter(Boolean);
 
   return (
@@ -273,11 +219,14 @@ export function ManageOvertimeModal({
                   variant={isAuthorizedManager ? "success" : "warning"}
                   className="font-extrabold text-[10px]"
                 >
-                  {isAuthorizedManager ? "Admin / HR Authority" : "Read-Only Mode"}
+                  {isAuthorizedManager
+                    ? "Admin / HR Authority"
+                    : "Read-Only Mode"}
                 </Badge>
               </div>
               <Subtitle className="text-xs text-slate-300 font-medium mt-0.5">
-                Bangladeshi Labor Act (BLA 2006) 2× (Basic / 208) formula & custom rate assignment
+                Bangladeshi Labor Act (BLA 2006) 2× (Basic / 208) formula &
+                custom rate assignment
               </Subtitle>
             </div>
           </div>
@@ -306,8 +255,8 @@ export function ManageOvertimeModal({
               <ShieldAlert className="h-4 w-4 text-amber-700 shrink-0" />
             )}
             <span>
-              <strong>Active Operator:</strong> {operator.name} ({operator.fullId}) &bull;{" "}
-              {operator.department}
+              <strong>Active Operator:</strong> {operator.name} (
+              {operator.fullId}) &bull; {operator.department}
             </span>
           </div>
 
@@ -318,7 +267,8 @@ export function ManageOvertimeModal({
               </span>
             ) : (
               <span className="font-extrabold text-amber-900">
-                🔒 Locked: Only Administration, HR, and High Officials can modify rates.
+                🔒 Locked: Only Administration, HR, and High Officials can
+                modify rates.
               </span>
             )}
           </div>
@@ -346,7 +296,9 @@ export function ManageOvertimeModal({
               <span className="text-xl font-extrabold text-slate-900 font-mono mt-1 block">
                 {data?.summary.total_employees ?? "—"} Staff
               </span>
-              <span className="text-[10px] text-slate-600 font-medium">Overtime eligible pool</span>
+              <span className="text-[10px] text-slate-600 font-medium">
+                Overtime eligible pool
+              </span>
             </div>
 
             <div className="bg-white border border-slate-300 rounded-xl p-3.5 shadow-2xs">
@@ -356,7 +308,9 @@ export function ManageOvertimeModal({
               <span className="text-xl font-extrabold text-blue-900 font-mono mt-1 block">
                 {data?.summary.total_overtime_formatted ?? "0 hrs 00 mins"}
               </span>
-              <span className="text-[10px] text-blue-700 font-bold">Accumulated from punches</span>
+              <span className="text-[10px] text-blue-700 font-bold">
+                Accumulated from punches
+              </span>
             </div>
 
             <div className="bg-white border border-slate-300 rounded-xl p-3.5 shadow-2xs">
@@ -366,7 +320,9 @@ export function ManageOvertimeModal({
               <span className="text-xl font-extrabold text-emerald-900 font-mono mt-1 block">
                 ৳{(data?.summary.total_overtime_cost ?? 0).toLocaleString()}
               </span>
-              <span className="text-[10px] text-emerald-700 font-bold">Added to monthly earnings</span>
+              <span className="text-[10px] text-emerald-700 font-bold">
+                Added to monthly earnings
+              </span>
             </div>
 
             <div className="bg-white border border-slate-300 rounded-xl p-3.5 shadow-2xs">
@@ -418,7 +374,9 @@ export function ManageOvertimeModal({
                 className="border-slate-300 bg-white hover:bg-slate-100 text-slate-900 font-bold text-xs shadow-2xs"
                 title="Reset all employees to the BLA 2006 2x Basic/208 statutory overtime formula"
               >
-                {isBulkApplying ? "Applying Formula..." : "Apply BLA Formula to All (2× Basic/208)"}
+                {isBulkApplying
+                  ? "Applying Formula..."
+                  : "Apply BLA Formula to All (2× Basic/208)"}
               </Button>
             )}
           </div>
@@ -462,19 +420,27 @@ export function ManageOvertimeModal({
                         <th className="py-3 px-4">Employee</th>
                         <th className="py-3 px-4">Department</th>
                         <th className="py-3 px-4 text-right">Basic Salary</th>
-                        <th className="py-3 px-4 text-right">BLA Formula Rate</th>
-                        <th className="py-3 px-4 text-center">Hourly OT Rate (৳/hr)</th>
+                        <th className="py-3 px-4 text-right">
+                          BLA Formula Rate
+                        </th>
+                        <th className="py-3 px-4 text-center">
+                          Hourly OT Rate (৳/hr)
+                        </th>
                         <th className="py-3 px-4 text-center">Month OT</th>
-                        <th className="py-3 px-4 text-right">Overtime Pay (৳)</th>
+                        <th className="py-3 px-4 text-right">
+                          Overtime Pay (৳)
+                        </th>
                         <th className="py-3 px-4 text-right">Action</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-200">
                       {filteredEmployees.map((emp) => {
                         const currentInput =
-                          rateInputs[emp.employee_full_id] ?? String(emp.active_effective_rate);
+                          rateInputs[emp.employee_full_id] ??
+                          String(emp.active_effective_rate);
                         const isChanged =
-                          parseFloat(currentInput) !== emp.active_effective_rate;
+                          parseFloat(currentInput) !==
+                          emp.active_effective_rate;
 
                         return (
                           <tr
@@ -516,7 +482,9 @@ export function ManageOvertimeModal({
 
                             <td className="py-3 px-4 text-center">
                               <div className="inline-flex items-center gap-1">
-                                <span className="font-bold text-slate-700 text-xs">৳</span>
+                                <span className="font-bold text-slate-700 text-xs">
+                                  ৳
+                                </span>
                                 <input
                                   type="number"
                                   min="0"
@@ -562,10 +530,15 @@ export function ManageOvertimeModal({
                                       : "border-slate-300 text-slate-700 hover:bg-slate-100"
                                   }`}
                                 >
-                                  {savingId === emp.employee_full_id ? "Saving..." : "Save Rate"}
+                                  {savingId === emp.employee_full_id
+                                    ? "Saving..."
+                                    : "Save Rate"}
                                 </Button>
                               ) : (
-                                <Badge variant="secondary" className="text-[10px] font-bold">
+                                <Badge
+                                  variant="secondary"
+                                  className="text-[10px] font-bold"
+                                >
                                   Locked
                                 </Badge>
                               )}
@@ -586,7 +559,8 @@ export function ManageOvertimeModal({
               <div className="bg-white border border-slate-300 rounded-xl overflow-hidden shadow-2xs">
                 {logs.length === 0 ? (
                   <div className="p-8 text-center text-slate-500 text-xs font-semibold">
-                    No overtime rate changes logged yet. Any updates made by Admin/HR will appear here.
+                    No overtime rate changes logged yet. Any updates made by
+                    Admin/HR will appear here.
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
@@ -595,7 +569,9 @@ export function ManageOvertimeModal({
                         <tr>
                           <th className="py-3 px-4">Timestamp</th>
                           <th className="py-3 px-4">Employee</th>
-                          <th className="py-3 px-4 text-right">Previous Rate</th>
+                          <th className="py-3 px-4 text-right">
+                            Previous Rate
+                          </th>
                           <th className="py-3 px-4 text-right">New Rate</th>
                           <th className="py-3 px-4">Authorized Manager</th>
                           <th className="py-3 px-4">Reason</th>
@@ -611,7 +587,8 @@ export function ManageOvertimeModal({
                               {l.employee_name} ({l.employee_full_id})
                             </td>
                             <td className="py-2.5 px-4 text-right font-mono text-slate-500">
-                              ৳{parseFloat(String(l.previous_rate)).toFixed(2)}/hr
+                              ৳{parseFloat(String(l.previous_rate)).toFixed(2)}
+                              /hr
                             </td>
                             <td className="py-2.5 px-4 text-right font-mono font-extrabold text-emerald-950">
                               ৳{parseFloat(String(l.new_rate)).toFixed(2)}/hr
@@ -636,7 +613,8 @@ export function ManageOvertimeModal({
         {/* Modal Footer */}
         <div className="px-6 py-3.5 border-t border-slate-200 bg-white flex items-center justify-between shrink-0">
           <p className="text-xs text-slate-600 font-medium">
-            Overtime salary calculations automatically reflect on employee payslips upon saving.
+            Overtime salary calculations automatically reflect on employee
+            payslips upon saving.
           </p>
           <Button
             size="sm"

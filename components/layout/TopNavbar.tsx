@@ -1,17 +1,17 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
-  Bell,
-  Clock,
-  CheckCircle2,
-  MapPin,
-  Sparkles,
+  ChevronDown,
+  ChevronRight,
+  Clock3,
   LogOut,
   Menu,
+  Settings2,
   ShieldCheck,
 } from "lucide-react";
-import { Button, Badge } from "@/components/shared";
+import { BrandMark, Button, Text } from "@/components/shared";
+import { NAV_MODULES, type NavTab } from "./Sidebar";
 
 interface TopNavbarProps {
   onOpenSettings: () => void;
@@ -28,197 +28,272 @@ interface TopNavbarProps {
   onQuickPunch?: () => void;
   isPunchedIn?: boolean;
   onOpenPermissions?: () => void;
-  onSwitchEmployee?: (emp: { id: number | string; fullId: string; name: string; department: string }) => void;
+  onSwitchEmployee?: (employee: {
+    id: number | string;
+    fullId: string;
+    name: string;
+    department: string;
+  }) => void;
   onLogout?: () => void;
   onToggleSidebar?: () => void;
+  activeTab?: NavTab;
 }
 
 export const PERSONA_PRESETS = [
-  { id: 9, fullId: "SMT-0026", name: "Nusrat Jahan", department: "Product Design" },
-  { id: 100, fullId: "SMT-0001", name: "System Administrator", department: "Administration" },
-  { id: 1, fullId: "SMT-0051", name: "Abdul Halim", department: "Sales & Distribution" },
-  { id: 10, fullId: "SMT-0042", name: "Tanvir Ahmed", department: "Engineering" },
-  { id: 6, fullId: "SMT-0007", name: "Ariful Islam", department: "Human Resources" },
+  {
+    id: 9,
+    fullId: "SMT-0026",
+    name: "Nusrat Jahan",
+    department: "Product Design",
+  },
+  {
+    id: 100,
+    fullId: "SMT-0001",
+    name: "System Administrator",
+    department: "Administration",
+  },
+  {
+    id: 1,
+    fullId: "SMT-0051",
+    name: "Abdul Halim",
+    department: "Sales & Distribution",
+  },
+  {
+    id: 10,
+    fullId: "SMT-0042",
+    name: "Tanvir Ahmed",
+    department: "Engineering",
+  },
+  {
+    id: 6,
+    fullId: "SMT-0007",
+    name: "Ariful Islam",
+    department: "Human Resources",
+  },
 ];
 
 export function TopNavbar({
   onOpenSettings,
-  activeToken,
   employeeFullId,
   employeeName,
-  department = "Sales & Distribution",
-  hasPunchedIn = false,
-  inTime = null,
-  lastOutTime = null,
-  workingHours = null,
+  department,
+  hasPunchedIn,
+  inTime,
   onPunchIn,
   onPunchOut,
   onQuickPunch,
-  isPunchedIn,
   onOpenPermissions,
   onSwitchEmployee,
   onLogout,
   onToggleSidebar,
+  activeTab = "dashboard",
 }: TopNavbarProps) {
-  const [time, setTime] = useState("");
-
+  const [date, setDate] = useState("");
+  const [menuOpen, setMenuOpen] = useState(false);
+  const account = useRef<HTMLDivElement>(null);
+  const accountButton = useRef<HTMLButtonElement>(null);
   useEffect(() => {
-    const updateTime = () => {
-      const now = new Date();
-      setTime(
-        now.toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit",
-          hour12: true,
-        })
+    const update = () =>
+      setDate(
+        new Date().toLocaleDateString("en-GB", {
+          weekday: "short",
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+          timeZone: "Asia/Dhaka",
+        }),
       );
-    };
-    updateTime();
-    const interval = setInterval(updateTime, 1000);
+    update();
+    const interval = setInterval(update, 60000);
     return () => clearInterval(interval);
   }, []);
-
+  useEffect(() => {
+    if (!menuOpen) return;
+    const dismiss = (event: PointerEvent) => {
+      if (!account.current?.contains(event.target as Node)) setMenuOpen(false);
+    };
+    const escape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setMenuOpen(false);
+        accountButton.current?.focus();
+      }
+    };
+    document.addEventListener("pointerdown", dismiss);
+    document.addEventListener("keydown", escape);
+    return () => {
+      document.removeEventListener("pointerdown", dismiss);
+      document.removeEventListener("keydown", escape);
+    };
+  }, [menuOpen]);
+  const section =
+    NAV_MODULES.find((module) => module.id === activeTab)?.label || "Workspace";
+  const initials = employeeName
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("");
   return (
-    <header className="h-16 bg-white border-b border-slate-300 px-3 sm:px-6 flex items-center justify-between sticky top-0 z-30 shadow-[0_1px_3px_rgba(0,0,0,0.03)]">
-      {/* Left Corporate Status Area */}
-      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-        {/* Mobile Navigation Drawer Toggle */}
+    <header className="sticky top-0 z-30 flex h-[76px] shrink-0 items-center justify-between gap-3 border-b border-slate-200/80 bg-white/95 px-4 backdrop-blur-md sm:px-7">
+      <div className="flex min-w-0 items-center gap-3">
         <button
+          type="button"
           onClick={onToggleSidebar}
-          className="lg:hidden p-2 rounded-xl text-slate-800 hover:text-slate-950 hover:bg-slate-100 border border-slate-300 transition-colors cursor-pointer shrink-0"
-          aria-label="Open Navigation Menu"
+          aria-label="Open navigation menu"
+          className="rounded-lg p-2 text-slate-600 hover:bg-slate-100 lg:hidden"
         >
-          <Menu className="h-5 w-5" />
+          <Menu className="size-5" />
         </button>
-
-        {/* Mobile Brand / App Badge */}
-        <div className="flex lg:hidden items-center gap-1.5 shrink-0">
-          <div className="h-8 w-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-black text-xs shadow-xs">
-            <ShieldCheck className="h-4 w-4" />
-          </div>
-          <span className="font-extrabold text-slate-900 text-xs tracking-tight hidden xs:inline sm:inline">
-            Smart HRM
-          </span>
-        </div>
-
-        {/* Company & Branch Tag (Desktop Only) */}
-        <div className="hidden xl:flex items-center gap-2 text-xs font-bold text-slate-900 bg-white border border-slate-300 px-3 py-1.5 rounded-xl shadow-2xs">
-          <MapPin className="h-3.5 w-3.5 text-slate-900 shrink-0" />
-          <span>Smart Tech (BD) Ltd. &bull; Dhaka HQ</span>
-        </div>
-
-        {/* Live Dhaka Time & Biometric status */}
-        <div className="hidden sm:flex items-center gap-2 text-xs font-semibold text-slate-800 bg-white border border-slate-300 px-2.5 sm:px-3 py-1.5 rounded-xl shadow-2xs">
-          <Clock className="h-3.5 w-3.5 text-slate-900 shrink-0" />
-          <span className="font-mono text-slate-950 font-extrabold text-[11px] sm:text-xs">{time || "09:00:00 AM"}</span>
-          <span className="text-slate-300 hidden md:inline">|</span>
-          <span className="hidden md:flex items-center gap-1.5 text-slate-700 font-semibold text-[11px]">
-            <span className="h-2 w-2 rounded-full bg-emerald-600 animate-pulse" />
-            ZKTeco BioSync
-          </span>
+        <BrandMark className="!size-8 !rounded-lg lg:hidden" />
+        <div className="hidden items-center gap-2 text-xs sm:flex">
+          <span className="text-slate-400">Workspace</span>
+          <ChevronRight className="size-3 text-slate-300" />
+          <span className="font-medium text-slate-800">{section}</span>
         </div>
       </div>
-
-      {/* Right Action Controls */}
-      <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
-        {/* Attendance Punch Controls: In Once, Out Unlimited */}
-        {!hasPunchedIn ? (
-          <Button
-            variant="default"
-            size="sm"
-            onClick={onPunchIn || onQuickPunch}
-            leftIcon={<Sparkles className="h-3.5 w-3.5 text-emerald-400 shrink-0" />}
-            className="bg-slate-900 hover:bg-slate-800 text-white font-extrabold shadow-sm text-xs h-9 px-2.5 sm:px-3"
-            title="Punch In: Permitted once per day"
-          >
-            <span className="hidden sm:inline">Punch In</span>
-            <span className="sm:hidden">In</span>
-          </Button>
-        ) : (
-          <div className="flex items-center gap-1.5 sm:gap-2">
-            <div className="hidden md:flex items-center gap-1.5 text-xs font-bold text-slate-800 bg-emerald-50 border border-emerald-300 px-2.5 py-1.5 rounded-xl shadow-2xs">
-              <span className="h-2 w-2 rounded-full bg-emerald-600 animate-pulse" />
-              <span>In: <strong className="font-mono text-emerald-950">{inTime || "09:00 AM"}</strong></span>
-              {workingHours && (
-                <>
-                  <span className="text-slate-300">|</span>
-                  <span className="font-mono text-emerald-800 font-extrabold">Duty: {workingHours}</span>
-                </>
-              )}
-            </div>
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onPunchOut || onQuickPunch}
-              leftIcon={<LogOut className="h-3.5 w-3.5 text-rose-600 shrink-0" />}
-              className="border-2 border-rose-300 bg-white hover:bg-rose-50 text-rose-900 font-extrabold text-xs shadow-2xs h-9 px-2.5 sm:px-3"
-              title="Punch out anytime. The last punch out calculates total duty hours."
-            >
-              <span className="hidden sm:inline">Punch Out</span>
-              <span className="sm:hidden">Out</span>
-            </Button>
-          </div>
-        )}
-
-        {/* Notification Bell */}
-        <button
-          onClick={onOpenSettings}
-          className="relative p-2 text-slate-700 hover:text-slate-950 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer border border-slate-300 shrink-0"
-          aria-label="Notifications"
+      <div className="flex shrink-0 items-center gap-3 sm:gap-5">
+        <Text
+          variant="caption"
+          className="hidden !font-normal !text-slate-500 xl:block"
         >
-          <Bell className="h-4 w-4" />
-          <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-600 ring-2 ring-white" />
-        </button>
-
-        {/* User Profile Avatar Chip & Persona Switcher */}
-        <div className="flex items-center gap-1.5 sm:gap-2 pl-1.5 sm:pl-3 border-l border-slate-300">
-          <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl bg-slate-900 text-white flex items-center justify-center font-extrabold text-xs shadow-xs shrink-0">
-            {employeeFullId.slice(-2)}
-          </div>
-          {onSwitchEmployee ? (
-            <div className="text-left">
-              <select
-                value={employeeFullId}
-                onChange={(e) => {
-                  const target = PERSONA_PRESETS.find((p) => p.fullId === e.target.value);
-                  if (target) onSwitchEmployee(target);
-                }}
-                className="max-w-[85px] sm:max-w-[170px] md:max-w-none text-xs font-bold text-slate-900 bg-white border border-slate-300 rounded-lg px-1.5 sm:px-2 py-1 focus:outline-none focus:border-slate-900 cursor-pointer shadow-2xs truncate"
-                title="Switch active employee to test permissions"
+          {date}
+        </Text>
+        <div className="hidden h-6 w-px bg-slate-200 sm:block" />
+        {hasPunchedIn && inTime && (
+          <Text
+            variant="caption"
+            className="hidden !font-normal !text-teal-700 md:block"
+          >
+            In at {inTime}
+          </Text>
+        )}
+        <Button
+          size="sm"
+          variant={hasPunchedIn ? "outline" : "default"}
+          onClick={
+            hasPunchedIn
+              ? onPunchOut || onQuickPunch
+              : onPunchIn || onQuickPunch
+          }
+          leftIcon={<Clock3 className="size-3.5" />}
+          className="!h-9 !rounded-lg !px-3"
+          aria-label={hasPunchedIn ? "Punch out" : "Punch in"}
+        >
+          {hasPunchedIn ? "Punch out" : "Punch in"}
+        </Button>
+        <div ref={account} className="relative">
+          <button
+            ref={accountButton}
+            type="button"
+            onClick={() => setMenuOpen(!menuOpen)}
+            aria-expanded={menuOpen}
+            aria-controls="account-panel"
+            aria-label="Open account menu"
+            className="flex items-center gap-2.5 rounded-xl py-1 text-left focus-visible:outline-2 focus-visible:outline-teal-700"
+          >
+            <span className="flex size-9 items-center justify-center rounded-full bg-teal-100 text-xs font-semibold text-teal-800">
+              {initials}
+            </span>
+            <span className="hidden max-w-40 sm:block">
+              <Text
+                as="span"
+                className="block truncate !text-xs !font-semibold"
               >
-                {PERSONA_PRESETS.map((p) => (
-                  <option key={p.fullId} value={p.fullId}>
-                    {p.name} ({p.department})
-                  </option>
-                ))}
-              </select>
-            </div>
-          ) : (
-            <div className="hidden lg:block text-left">
-              <p className="text-xs font-bold text-slate-800 leading-tight">
                 {employeeName}
-              </p>
-              <p className="text-[10px] text-slate-600 font-semibold font-mono">
-                {employeeFullId} &bull; {department}
-              </p>
+              </Text>
+              <Text
+                as="span"
+                variant="caption"
+                className="mt-1 block truncate !text-[10px] !font-normal !text-slate-500"
+              >
+                {department}
+              </Text>
+            </span>
+            <ChevronDown className="hidden size-3.5 text-slate-400 sm:block" />
+          </button>
+          {menuOpen && (
+            <div
+              id="account-panel"
+              className="absolute right-0 top-14 z-50 w-64 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl shadow-slate-900/10"
+            >
+              <div className="mb-1 border-b border-slate-100 px-3 py-3">
+                <Text className="!text-sm !font-semibold">{employeeName}</Text>
+                <Text
+                  variant="caption"
+                  className="mt-1 !font-normal !text-slate-500"
+                >
+                  {employeeFullId} · {department}
+                </Text>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setMenuOpen(false);
+                  onOpenSettings();
+                }}
+                className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-xs text-slate-600 hover:bg-slate-50"
+              >
+                <Settings2 className="size-4" />
+                Integrations & settings
+              </button>
+              {onOpenPermissions && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    onOpenPermissions();
+                  }}
+                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-xs text-slate-600 hover:bg-slate-50"
+                >
+                  <ShieldCheck className="size-4" />
+                  Access permissions
+                </button>
+              )}
+              {process.env.NEXT_PUBLIC_ENABLE_DEMO_PREVIEWS === "true" &&
+                onSwitchEmployee && (
+                  <label className="block border-t border-slate-100 px-3 py-3 text-xs text-slate-500">
+                    Preview persona
+                    <select
+                      aria-label="Preview persona"
+                      value={employeeFullId}
+                      onChange={(event) => {
+                        const persona = PERSONA_PRESETS.find(
+                          (item) => item.fullId === event.target.value,
+                        );
+                        if (persona) {
+                          onSwitchEmployee(persona);
+                          setMenuOpen(false);
+                        }
+                      }}
+                      className="mt-2 w-full rounded-lg border border-slate-200 px-2 py-2"
+                    >
+                      <option value={employeeFullId}>{employeeName}</option>
+                      {PERSONA_PRESETS.filter(
+                        (item) => item.fullId !== employeeFullId,
+                      ).map((item) => (
+                        <option key={item.fullId} value={item.fullId}>
+                          {item.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+              {onLogout && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    onLogout();
+                  }}
+                  className="mt-1 flex w-full items-center gap-3 rounded-lg border-t border-slate-100 px-3 py-2.5 text-xs text-rose-700 hover:bg-rose-50"
+                >
+                  <LogOut className="size-4" />
+                  Sign out
+                </button>
+              )}
             </div>
           )}
         </div>
-
-        {/* Logout Button */}
-        {onLogout && (
-          <button
-            onClick={onLogout}
-            className="flex items-center gap-1 p-2 sm:px-3 sm:py-2 text-xs font-bold text-rose-700 hover:text-white hover:bg-rose-600 border border-rose-300 hover:border-rose-600 rounded-xl transition-all duration-150 cursor-pointer shadow-2xs shrink-0"
-            title="Logout / Sign out"
-            aria-label="Logout"
-          >
-            <LogOut className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Logout</span>
-          </button>
-        )}
       </div>
     </header>
   );

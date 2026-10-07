@@ -4,8 +4,10 @@ import React, { useState, useEffect, useRef } from "react";
 import { Search, X, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export interface SearchInputProps
-  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "onChange"> {
+export interface SearchInputProps extends Omit<
+  React.InputHTMLAttributes<HTMLInputElement>,
+  "onChange"
+> {
   value?: string;
   defaultValue?: string;
   onChange?: (value: string) => void;
@@ -83,7 +85,7 @@ export function SearchInput({
   return (
     <div className={cn("relative flex items-center w-full", className)}>
       <Search
-        className="absolute left-3.5 h-4 w-4 text-slate-600 pointer-events-none"
+        className="absolute left-3.5 h-4 w-4 text-slate-400 pointer-events-none"
         aria-hidden="true"
       />
       <input
@@ -93,8 +95,8 @@ export function SearchInput({
         onChange={handleChange}
         placeholder={placeholder}
         className={cn(
-          "h-10 w-full rounded-lg border-2 border-slate-300 bg-white pl-10 pr-10 text-sm font-semibold text-slate-900 placeholder:text-slate-500 placeholder:font-normal focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900 transition-all shadow-xs",
-          className
+          "h-10 w-full rounded-lg border border-slate-200 bg-white pl-10 pr-10 text-sm font-normal text-slate-700 placeholder:text-slate-500 placeholder:font-normal focus:border-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-600/10 transition-colors shadow-none",
+          className,
         )}
         {...props}
       />

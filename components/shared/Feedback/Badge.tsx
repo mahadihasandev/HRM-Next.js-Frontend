@@ -7,32 +7,30 @@ export const badgeVariants = cva(
   {
     variants: {
       variant: {
-        default:
-          "bg-slate-900 text-white font-bold shadow-2xs border border-slate-900 dark:bg-slate-100 dark:text-slate-950",
-        secondary:
-          "bg-white text-slate-950 border-2 border-slate-900 font-bold shadow-2xs dark:bg-slate-900 dark:text-white dark:border-slate-400",
-        success:
-          "bg-emerald-700 text-white font-bold border border-emerald-800 shadow-2xs dark:bg-emerald-600 dark:text-white",
-        warning:
-          "bg-amber-600 text-white font-bold border border-amber-700 shadow-2xs dark:bg-amber-500 dark:text-slate-950",
-        destructive:
-          "bg-red-700 text-white font-bold border border-red-800 shadow-2xs dark:bg-red-600 dark:text-white",
-        outline:
-          "bg-white text-slate-950 border-2 border-slate-900 font-bold shadow-2xs dark:text-white dark:border-slate-400",
+        default: "bg-slate-100 text-slate-600 border border-slate-200",
+        secondary: "bg-slate-50 text-slate-600 border border-slate-200",
+        success: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+        warning: "bg-amber-50 text-amber-800 border border-amber-200",
+        destructive: "bg-rose-50 text-rose-700 border border-rose-200",
+        outline: "bg-white text-slate-600 border border-slate-200",
       },
     },
     defaultVariants: {
       variant: "default",
     },
-  }
+  },
 );
 
 export interface BadgeProps
-  extends React.HTMLAttributes<HTMLDivElement>,
+  extends
+    React.HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof badgeVariants> {}
 
 export function Badge({ className, variant, ...props }: BadgeProps) {
   return (
-    <div className={cn(badgeVariants({ variant }), className)} {...props} />
+    <div
+      className={cn("hrm-badge", badgeVariants({ variant }), className)}
+      {...props}
+    />
   );
 }

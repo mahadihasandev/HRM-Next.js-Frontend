@@ -42,6 +42,7 @@ export const baseApi = createApi({
     "Leave",
     "Payroll",
     "Factory",
+    "People",
     "Requests",
     "Loans",
     "SndDashboard",

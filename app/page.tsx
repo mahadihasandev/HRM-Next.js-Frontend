@@ -19,6 +19,7 @@ import { AttendanceView } from "@/components/modules/attendance/AttendanceView";
 import { AllEmployeesTodayAttendanceView } from "@/components/modules/attendance/AllEmployeesTodayAttendanceView";
 import { LeaveManagementView } from "@/components/modules/leave/LeaveManagementView";
 import { SalaryPayrollView } from "@/components/modules/payroll/SalaryPayrollView";
+import { PeopleOperationsView } from "@/components/modules/people/PeopleOperationsView";
 import { FactoryOperationsView } from "@/components/modules/factory/FactoryOperationsView";
 import { AccountingView } from "@/components/modules/accounting/AccountingView";
 import { RequestsView } from "@/components/modules/requests/RequestsView";
@@ -605,7 +606,7 @@ export default function AppHome() {
             </div>
           ) : (
             <>
-              {process.env.NEXT_PUBLIC_ENABLE_DEMO_PREVIEWS !== 'true' && !['dashboard', 'employees', 'today-attendance', 'attendance', 'leave', 'salary', 'factory'].includes(activeTab) ? (
+              {process.env.NEXT_PUBLIC_ENABLE_DEMO_PREVIEWS !== 'true' && !['dashboard', 'employees', 'today-attendance', 'attendance', 'leave', 'salary', 'factory', 'people'].includes(activeTab) ? (
                 <CardWrapper title="This module is not available yet" description="Use employee, payroll, leave, attendance and factory tools for your company records." />
               ) : <>
               {activeTab === "dashboard" && (
@@ -701,6 +702,7 @@ export default function AppHome() {
                 />
               )}
 
+              {activeTab === "people" && <PeopleOperationsView />}
               {activeTab === "factory" && (
                 <FactoryOperationsView
                   canManage={

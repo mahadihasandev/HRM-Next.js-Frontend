@@ -28,19 +28,14 @@ import {
 import { payrollError } from "../payroll/PayrollWorkspace";
 import { label } from "@/lib/payroll/import";
 import { FactoryRecordForm } from "./FactoryRecordForm";
-const tabs = [
-  "production",
-  "factory",
-  "line",
-  "shift",
-  "grade",
-  "safety",
-] as const;
-type Tab = (typeof tabs)[number];
-export function FactoryOperationsView({ canManage }: { canManage: boolean }) {
+import { FACTORY_SECTIONS, type FactorySection } from "@/lib/navigation";
+export function FactoryOperationsView({ canManage, tab, onSectionChange }: {
+  canManage: boolean;
+  tab: FactorySection;
+  onSectionChange: (tab: FactorySection) => void;
+}) {
   const { data, isLoading, error, refetch } = useFactoryOperationsQuery();
   const [save, saveState] = useSaveFactoryRecordMutation();
-  const [tab, setTab] = useState<Tab>("production");
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<FactoryPayload | null>(null);
   const [formOpen, setFormOpen] = useState(false);
@@ -160,24 +155,20 @@ export function FactoryOperationsView({ canManage }: { canManage: boolean }) {
         aria-label="Factory operations"
         className="flex gap-2 overflow-x-auto border-b border-slate-200 pb-3"
       >
-        {tabs.map((value) => (
+        {FACTORY_SECTIONS.map(({ id: value, label: title }) => (
           <button
             key={value}
             role="tab"
             aria-selected={tab === value}
             onClick={() => {
-              setTab(value);
+              onSectionChange(value);
               setSearch("");
               setFormOpen(false);
               setEditing(null);
             }}
             className={`px-4 py-2 rounded-lg text-sm whitespace-nowrap ${value === tab ? "bg-teal-700 text-white" : "text-slate-500 hover:bg-slate-50"}`}
           >
-            {value === "factory"
-              ? "Factory units"
-              : value === "safety"
-                ? "Safety & training"
-                : label(value)}
+            {title}
           </button>
         ))}
       </div>

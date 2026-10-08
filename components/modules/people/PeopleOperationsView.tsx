@@ -51,9 +51,11 @@ const icons = {
   holiday: CalendarDays,
 };
 
-export function PeopleOperationsView() {
+export function PeopleOperationsView({ kind, onSectionChange }: {
+  kind: PeopleKind;
+  onSectionChange: (kind: PeopleKind) => void;
+}) {
   const overviewQuery = usePeopleOverviewQuery();
-  const [kind, setKind] = useState<PeopleKind>("document");
   const [page, setPage] = useState(1);
   const [q, setQ] = useState("");
   const [search, setSearch] = useState("");
@@ -73,7 +75,7 @@ export function PeopleOperationsView() {
     overview && (canManage || kind === "grievance" || kind === "incident"),
   );
   function selectKind(next: PeopleKind) {
-    setKind(next);
+    onSectionChange(next);
     setPage(1);
     setQ("");
     setSearch("");

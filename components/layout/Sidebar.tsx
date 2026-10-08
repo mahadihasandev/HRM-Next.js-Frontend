@@ -29,29 +29,14 @@ import {
 import { cn } from "@/lib/utils";
 import { BrandMark, SearchInput, Text } from "@/components/shared";
 
-export type NavTab =
-  | "dashboard"
-  | "today-attendance"
-  | "employees"
-  | "hr-setup"
-  | "recruitment"
-  | "commission"
-  | "devices-logs"
-  | "attendance"
-  | "leave"
-  | "salary"
-  | "factory"
-  | "people"
-  | "accounting"
-  | "snd"
-  | "sfm"
-  | "requests"
-  | "shifts"
-  | "outwork"
-  | "loans"
-  | "performance"
-  | "notices"
-  | "settings";
+import {
+  FACTORY_SECTIONS,
+  PEOPLE_SECTIONS,
+  isModuleAvailable,
+  resolveNavigation,
+  type NavTab,
+} from "@/lib/navigation";
+export type { NavTab } from "@/lib/navigation";
 
 export interface NavSubItem {
   id: string;
@@ -81,7 +66,7 @@ export interface SidebarProps {
   onClose?: () => void;
 }
 
-export const NAV_MODULES: NavModule[] = [
+const MODULE_CATALOG: NavModule[] = [
   {
     id: "dashboard",
     label: "Dashboard",
@@ -262,38 +247,28 @@ export const NAV_MODULES: NavModule[] = [
   },
 ];
 
+const demoPreview = process.env.NEXT_PUBLIC_ENABLE_DEMO_PREVIEWS === "true";
+export const NAV_MODULES: NavModule[] = MODULE_CATALOG
+  .filter((module) => isModuleAvailable(module.id, demoPreview))
+  .map((module) => {
+    if (module.id === "people") return { ...module, subItems: [...PEOPLE_SECTIONS] };
+    if (module.id === "factory") return { ...module, subItems: [...FACTORY_SECTIONS] };
+    if (module.id === "employees" && !demoPreview) return { ...module, subItems: undefined };
+    return module;
+  });
+
 const NAV_GROUPS: { label: string; tabs: NavTab[] }[] = [
-  {
-    label: "WORKSPACE",
-    tabs: [
-      "dashboard",
-      "employees",
-      "today-attendance",
-      "leave",
-      "salary",
-      "factory",
-    ],
-  },
-  {
-    label: "PEOPLE OPERATIONS",
-    tabs: [
-      "people",
-      "recruitment",
-      "performance",
-      "hr-setup",
-      "shifts",
-      "devices-logs",
-      "notices",
-    ],
-  },
-  {
-    label: "SELF SERVICE",
-    tabs: ["attendance", "requests", "loans", "outwork"],
-  },
-  {
-    label: "BUSINESS",
-    tabs: ["accounting", "commission", "snd", "sfm", "settings"],
-  },
+  { label: "OVERVIEW", tabs: ["dashboard", "today-attendance"] },
+  { label: "WORKFORCE", tabs: ["employees", "people", "leave", "salary"] },
+  { label: "OPERATIONS", tabs: ["factory"] },
+  { label: "MY WORKSPACE", tabs: ["attendance", "settings"] },
+  ...(demoPreview
+    ? [{
+        label: "DEMO PREVIEWS",
+        tabs: MODULE_CATALOG.filter((module) => !isModuleAvailable(module.id))
+          .map((module) => module.id),
+      }]
+    : []),
 ];
 
 export function Sidebar({
@@ -313,7 +288,9 @@ export function Sidebar({
   );
   const drawer = useRef<HTMLElement>(null);
   const closeButton = useRef<HTMLButtonElement>(null);
-  const isSearching = searchQuery.trim().length > 0;
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const isSearching = normalizedQuery.length > 0;
+  const selectedSection = resolveNavigation(activeTab, activeSubOption, demoPreview).section;
   const filteredModules = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
     return NAV_MODULES.filter(
@@ -364,6 +341,7 @@ export function Sidebar({
   }, [isOpen, onClose]);
 
   const navigate = (tab: NavTab, sub?: string) => {
+    setOpenAccordions((previous) => ({ ...previous, [tab]: true }));
     onTabChange(tab, sub);
     onClose?.();
   };
@@ -388,7 +366,7 @@ export function Sidebar({
             : "invisible -translate-x-full lg:visible lg:translate-x-0",
         )}
       >
-        <div className="flex h-20 shrink-0 items-center gap-3 px-6">
+        <div className="flex h-20 shrink-0 items-center gap-3 border-b border-slate-100 px-6">
           <BrandMark />
           <div className="flex-1">
             <Text className="!text-lg !font-semibold !tracking-tight">
@@ -411,7 +389,7 @@ export function Sidebar({
             <X className="size-4" />
           </button>
         </div>
-        <div className="px-5 pb-4">
+        <div className="px-5 py-5">
           <SearchInput
             value={searchQuery}
             onChange={setSearchQuery}
@@ -421,7 +399,7 @@ export function Sidebar({
           />
         </div>
         <nav
-          className="flex-1 overflow-y-auto px-4 pb-5"
+          className="sidebar-scrollbar flex-1 overflow-y-auto px-4 pb-5"
           aria-label="Workspace modules"
         >
           {NAV_GROUPS.map((group) => {
@@ -430,10 +408,10 @@ export function Sidebar({
               .filter((item): item is NavModule => Boolean(item));
             if (!modules.length) return null;
             return (
-              <div key={group.label} className="mb-5">
+              <div key={group.label} className="mb-6">
                 <Text
                   variant="caption"
-                  className="px-3 pb-2 !text-[10px] !font-medium !tracking-[.12em] !text-slate-400"
+                  className="px-3 pb-2 !text-[10px] !font-semibold !tracking-[.14em] !text-slate-500"
                 >
                   {group.label}
                 </Text>
@@ -448,22 +426,22 @@ export function Sidebar({
                       <div key={module.id}>
                         <div
                           className={cn(
-                            "flex items-center rounded-xl transition-colors",
+                            "flex items-center rounded-lg transition-colors",
                             active
-                              ? "bg-teal-50 text-teal-800"
+                              ? "bg-slate-900 text-white shadow-sm"
                               : "text-slate-600 hover:bg-slate-50 hover:text-slate-900",
                           )}
                         >
                           <button
                             type="button"
-                            onClick={() => navigate(module.id)}
-                            aria-current={active ? "page" : undefined}
+                            onClick={() => navigate(module.id, module.subItems?.[0]?.id)}
+                            aria-current={active && !module.subItems ? "page" : undefined}
                             className="flex min-w-0 flex-1 items-center gap-3 rounded-xl px-3 py-2.5 text-left text-[13px] font-medium"
                           >
                             <Icon
                               className={cn(
                                 "size-[18px] shrink-0",
-                                active ? "text-teal-700" : "text-slate-400",
+                                active ? "text-teal-300" : "text-slate-500",
                               )}
                             />
                             <span className="truncate">{module.label}</span>
@@ -473,18 +451,19 @@ export function Sidebar({
                               </span>
                             )}
                           </button>
-                          {module.subItems && (
+                          {module.subItems && !isSearching && (
                             <button
                               type="button"
-                              aria-label={`${expanded ? "Collapse" : "Expand"} ${module.label}`}
+                              aria-label={`${expanded || isSearching ? "Collapse" : "Expand"} ${module.label}`}
                               aria-expanded={expanded || isSearching}
+                              aria-controls={`nav-${module.id}`}
                               onClick={() =>
                                 setOpenAccordions((previous) => ({
                                   ...previous,
                                   [module.id]: !expanded,
                                 }))
                               }
-                              className="mr-1 rounded-lg p-2 hover:bg-teal-100/50"
+                              className="mr-1 rounded-md p-2 hover:bg-slate-400/15"
                             >
                               <ChevronDown
                                 className={cn(
@@ -496,32 +475,32 @@ export function Sidebar({
                           )}
                         </div>
                         {showChildren && (
-                          <div className="ml-[21px] mt-1 border-l border-slate-200 pl-3">
+                          <div id={`nav-${module.id}`} className="ml-[21px] mt-2 border-l border-slate-200 pl-3">
                             {module.subItems
                               ?.filter(
                                 (item) =>
                                   !isSearching ||
                                   module.label
                                     .toLowerCase()
-                                    .includes(searchQuery.toLowerCase()) ||
+                                    .includes(normalizedQuery) ||
                                   item.label
                                     .toLowerCase()
-                                    .includes(searchQuery.toLowerCase()),
+                                    .includes(normalizedQuery),
                               )
                               .map((item) => (
                                 <button
                                   type="button"
                                   key={item.id}
                                   aria-current={
-                                    active && activeSubOption === item.id
+                                    active && selectedSection === item.id
                                       ? "page"
                                       : undefined
                                   }
                                   onClick={() => navigate(module.id, item.id)}
                                   className={cn(
                                     "my-0.5 block w-full rounded-lg px-3 py-2 text-left text-xs leading-relaxed",
-                                    active && activeSubOption === item.id
-                                      ? "bg-teal-50 font-medium text-teal-800"
+                                    active && selectedSection === item.id
+                                      ? "bg-teal-50 font-semibold text-teal-900 shadow-[inset_2px_0_0_#0f766e]"
                                       : "text-slate-500 hover:bg-slate-50 hover:text-slate-900",
                                   )}
                                 >

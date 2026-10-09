@@ -41,6 +41,18 @@ export const FACTORY_SECTIONS = [
 export type PeopleSection = (typeof PEOPLE_SECTIONS)[number]["id"];
 export type FactorySection = (typeof FACTORY_SECTIONS)[number]["id"];
 
+export const EMPLOYEE_SECTIONS = [
+  { id: "directory", label: "Master Employee Directory" },
+  { id: "birthdays", label: "Emp. Birthdays Calendar" },
+  { id: "probation", label: "Probation List & Reviews" },
+  { id: "summary", label: "Workforce Distribution" },
+  { id: "reports", label: "Joiners & Separations" },
+  { id: "archive", label: "Deactive Staff Archive" },
+  { id: "bulk-salary", label: "Bulk Salary Increment" },
+  { id: "id-cards", label: "Smart ID Card Print" },
+] as const;
+export type EmployeeSection = (typeof EMPLOYEE_SECTIONS)[number]["id"];
+
 export const LIVE_MODULES: readonly NavTab[] = [
   "dashboard", "today-attendance", "employees", "attendance", "leave",
   "salary", "factory", "people", "settings",
@@ -54,6 +66,9 @@ export function peopleSection(value?: string): PeopleSection {
 export function factorySection(value?: string): FactorySection {
   return FACTORY_SECTIONS.find((item) => item.id === value)?.id ?? "production";
 }
+export function employeeSection(value?: string): EmployeeSection {
+  return EMPLOYEE_SECTIONS.find((item) => item.id === value)?.id ?? "directory";
+}
 export function resolveNavigation(tab: NavTab, section?: string, demoPreview = false): { tab: NavTab; section?: string } {
   if (!demoPreview) {
     if (tab === "shifts") return { tab: "people", section: "roster" };
@@ -66,6 +81,6 @@ export function resolveNavigation(tab: NavTab, section?: string, demoPreview = f
   }
   if (tab === "people") return { tab, section: peopleSection(section) };
   if (tab === "factory") return { tab, section: factorySection(section) };
-  if (tab === "employees" && !demoPreview) return { tab, section: section === "add-employee" ? section : "directory" };
+  if (tab === "employees") return { tab, section: employeeSection(section) };
   return { tab, section };
 }

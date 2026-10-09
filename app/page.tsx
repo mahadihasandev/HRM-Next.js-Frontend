@@ -5,6 +5,7 @@ import {
   isModuleAvailable,
   peopleSection,
   factorySection,
+  employeeSection,
 } from "@/lib/navigation";
 
 import { requestHrm } from "@/lib/api/request";
@@ -650,21 +651,10 @@ export default function AppHome() {
 
               {activeTab === "employees" && (
                 <EmployeeDirectoryView
-                  key="employees-module"
+                  key={`employees-${employeeSection(activeSubOption)}`}
                   currentOperator={currentEmployee}
                   isAdmin={isCurrentAdmin}
-                  initialSubTab={
-                    activeSubOption === "add-employee" ||
-                    activeSubOption === "birthdays" ||
-                    activeSubOption === "probation" ||
-                    activeSubOption === "summary" ||
-                    activeSubOption === "reports" ||
-                    activeSubOption === "archive" ||
-                    activeSubOption === "bulk-salary" ||
-                    activeSubOption === "id-cards"
-                      ? (activeSubOption as EmployeeSubTab)
-                      : "directory"
-                  }
+                  initialSubTab={employeeSection(activeSubOption)}
                   onSubTabChange={(sub) => handleTabChange("employees", sub)}
                 />
               )}

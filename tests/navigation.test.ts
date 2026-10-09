@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
-  LIVE_MODULES, PEOPLE_SECTIONS, FACTORY_SECTIONS,
+  LIVE_MODULES, PEOPLE_SECTIONS, FACTORY_SECTIONS, EMPLOYEE_SECTIONS,
   isModuleAvailable, resolveNavigation,
 } from "../lib/navigation";
 
@@ -13,11 +13,13 @@ test("production navigation only exposes implemented modules", () => {
   }
 });
 
-test("every HR and factory submenu resolves to its exact section", () => {
+test("every HR, factory and employee submenu resolves to its exact section", () => {
   for (const item of PEOPLE_SECTIONS) assert.deepEqual(resolveNavigation("people", item.id), { tab: "people", section: item.id });
   for (const item of FACTORY_SECTIONS) assert.deepEqual(resolveNavigation("factory", item.id), { tab: "factory", section: item.id });
+  for (const item of EMPLOYEE_SECTIONS) assert.deepEqual(resolveNavigation("employees", item.id), { tab: "employees", section: item.id });
   assert.deepEqual(resolveNavigation("people", "unknown"), { tab: "people", section: "document" });
   assert.deepEqual(resolveNavigation("factory", "unknown"), { tab: "factory", section: "production" });
+  assert.deepEqual(resolveNavigation("employees", "unknown"), { tab: "employees", section: "directory" });
 });
 
 test("parent and dashboard navigation reset stale sections", () => {
@@ -25,7 +27,7 @@ test("parent and dashboard navigation reset stale sections", () => {
   assert.deepEqual(resolveNavigation("factory"), { tab: "factory", section: "production" });
   assert.deepEqual(resolveNavigation("employees"), { tab: "employees", section: "directory" });
   assert.deepEqual(resolveNavigation("leave"), { tab: "leave", section: undefined });
-  assert.deepEqual(resolveNavigation("employees", "bulk-salary"), { tab: "employees", section: "directory" });
+  assert.deepEqual(resolveNavigation("employees", "bulk-salary"), { tab: "employees", section: "bulk-salary" });
 });
 
 test("legacy shortcuts use the real replacement workflows", () => {

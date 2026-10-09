@@ -384,39 +384,15 @@ export function EmployeeDirectoryView({
         />
       )}
 
-      {/* Sub-Tabs Navigation Bar */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs space-y-4">
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-2 border-b border-slate-200">
-          {EMPLOYEE_TABS.map((tab) => {
-            const isTabActive = tab.id === activeSubTab;
-            const TabIcon = tab.icon;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => handleSubTabClick(tab.id)}
-                className={cn(
-                  "flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer",
-                  isTabActive
-                    ? "bg-teal-700 text-white shadow-xs"
-                    : "text-slate-700 hover:text-slate-950 hover:bg-slate-100"
-                )}
-              >
-                <TabIcon className={cn("h-4 w-4", isTabActive ? "text-white" : "text-slate-500")} />
-                <span className={cn(isTabActive ? "text-white font-bold" : "text-slate-800")}>
-                  {tab.label}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Tab Header Banner for Active Sub-Tab (when not directory) */}
-        {activeSubTab !== "directory" && (
-          <div className="flex items-center gap-3 pt-1 pb-2">
+      {/* Render Non-Directory Sub-Tabs directly without in-page tab row */}
+      {activeSubTab !== "directory" && (
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-4">
+          <div className="flex items-center gap-3 pb-3 border-b border-slate-100">
             <div className="h-10 w-10 rounded-xl bg-slate-900 text-white flex items-center justify-center shrink-0 shadow-xs">
               {(() => {
-                const CurrentIcon = EMPLOYEE_TABS.find((t) => t.id === activeSubTab)?.icon || Users;
+                const CurrentIcon =
+                  EMPLOYEE_TABS.find((t) => t.id === activeSubTab)?.icon ||
+                  Users;
                 return <CurrentIcon className="h-5 w-5" />;
               })()}
             </div>
@@ -429,17 +405,16 @@ export function EmployeeDirectoryView({
               </p>
             </div>
           </div>
-        )}
 
-        {/* Render Non-Directory Sub-Tabs */}
-        {activeSubTab === "birthdays" && <EmployeeBirthdaysTab />}
-        {activeSubTab === "probation" && <EmployeeProbationTab />}
-        {activeSubTab === "summary" && <EmployeeSummaryTab />}
-        {activeSubTab === "reports" && <EmployeeReportsTab />}
-        {activeSubTab === "archive" && <EmployeeArchiveHoldTab />}
-        {activeSubTab === "bulk-salary" && <EmployeeBulkSalaryTab />}
-        {activeSubTab === "id-cards" && <EmployeeIdCardPrintTab />}
-      </div>
+          {activeSubTab === "birthdays" && <EmployeeBirthdaysTab />}
+          {activeSubTab === "probation" && <EmployeeProbationTab />}
+          {activeSubTab === "summary" && <EmployeeSummaryTab />}
+          {activeSubTab === "reports" && <EmployeeReportsTab />}
+          {activeSubTab === "archive" && <EmployeeArchiveHoldTab />}
+          {activeSubTab === "bulk-salary" && <EmployeeBulkSalaryTab />}
+          {activeSubTab === "id-cards" && <EmployeeIdCardPrintTab />}
+        </div>
+      )}
       {activeSubTab === "directory" && (
         <>
           {/* Search and Filters Bar with High Contrast */}

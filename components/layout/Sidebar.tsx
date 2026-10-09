@@ -30,6 +30,7 @@ import { cn } from "@/lib/utils";
 import { BrandMark, SearchInput, Text } from "@/components/shared";
 
 import {
+  EMPLOYEE_SECTIONS,
   FACTORY_SECTIONS,
   PEOPLE_SECTIONS,
   isModuleAvailable,
@@ -253,7 +254,7 @@ export const NAV_MODULES: NavModule[] = MODULE_CATALOG
   .map((module) => {
     if (module.id === "people") return { ...module, subItems: [...PEOPLE_SECTIONS] };
     if (module.id === "factory") return { ...module, subItems: [...FACTORY_SECTIONS] };
-    if (module.id === "employees" && !demoPreview) return { ...module, subItems: undefined };
+    if (module.id === "employees") return { ...module, subItems: [...EMPLOYEE_SECTIONS] };
     return module;
   });
 

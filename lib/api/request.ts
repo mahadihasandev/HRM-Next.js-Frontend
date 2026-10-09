@@ -10,8 +10,26 @@ export async function requestHrm(url: string, options: RequestInit = {}): Promis
     throw new Error('The request must use the configured HRM API URL.');
   }
   const method = options.method ?? 'GET';
-  const request = { url: target.pathname.slice(base.pathname.length) + target.search, method,
-    body: typeof options.body === 'string' ? JSON.parse(options.body) as unknown : undefined };
+  const requestHeaders: Record<string, string> = {};
+  if (options.headers) {
+    if (options.headers instanceof Headers) {
+      options.headers.forEach((val, key) => {
+        requestHeaders[key] = val;
+      });
+    } else if (Array.isArray(options.headers)) {
+      options.headers.forEach(([key, val]) => {
+        requestHeaders[key] = val;
+      });
+    } else {
+      Object.assign(requestHeaders, options.headers);
+    }
+  }
+  const request = {
+    url: target.pathname.slice(base.pathname.length) + target.search,
+    method,
+    headers: Object.keys(requestHeaders).length > 0 ? requestHeaders : undefined,
+    body: typeof options.body === 'string' ? JSON.parse(options.body) as unknown : undefined,
+  };
   const handle = method === 'GET'
     ? store.dispatch(legacyApi.endpoints.requestRead.initiate(request, { forceRefetch: true }))
     : store.dispatch(legacyApi.endpoints.requestWrite.initiate(request));

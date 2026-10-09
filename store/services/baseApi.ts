@@ -1,5 +1,5 @@
 import { isSuccessfulApiResponse } from "@/lib/api/response";
-import { API_BASE_URL } from "@/lib/api/config";
+import { API_BASE_URL, getStoredAuthToken } from "@/lib/api/config";
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
 export const baseApi = createApi({
@@ -10,9 +10,9 @@ export const baseApi = createApi({
     prepareHeaders: (headers, { getState }) => {
       headers.set("Accept", "application/json");
 
-      // Resolve dynamic auth token from localStorage
+      // Resolve dynamic auth token from Redux or persistent storage
       const state = getState() as { auth: { token: string | null } };
-      const token = state.auth.token || "";
+      const token = state.auth.token || getStoredAuthToken();
       let hrmApiKey = "";
 
       if (typeof window !== "undefined") {

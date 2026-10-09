@@ -144,7 +144,7 @@ export function ApiCredentialsModal({
               label="API Base URL (Local or Remote)"
               value={apiUrl}
               onChange={(e) => setApiUrl(e.target.value)}
-              helperText="Local Laravel server (http://localhost:8000/api/v1) or remote URL"
+              helperText="Backend API server (https://hrm-php-backend-indol.vercel.app/api/v1) or custom URL"
             />
 
             <div className="grid grid-cols-2 gap-3">

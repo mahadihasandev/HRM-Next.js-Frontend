@@ -1,5 +1,12 @@
 "use client";
 
+import {
+  resolveNavigation,
+  isModuleAvailable,
+  peopleSection,
+  factorySection,
+} from "@/lib/navigation";
+
 import { requestHrm } from "@/lib/api/request";
 
 import { API_BASE_URL } from "@/lib/api/config";
@@ -331,8 +338,13 @@ export default function AppHome() {
     if (tab === "settings") {
       setIsSettingsOpen(true);
     } else {
-      setActiveTab(tab);
-      setActiveSubOption(subOption);
+      const target = resolveNavigation(
+        tab,
+        subOption,
+        process.env.NEXT_PUBLIC_ENABLE_DEMO_PREVIEWS === "true",
+      );
+      setActiveTab(target.tab);
+      setActiveSubOption(target.section);
     }
   };
 
@@ -487,6 +499,7 @@ export default function AppHome() {
       <div className="flex-1 flex flex-col min-w-0">
         {/* Sticky Top Navbar */}
         <TopNavbar
+          activeSubOption={activeSubOption}
           activeTab={activeTab}
           onOpenSettings={() => setIsSettingsOpen(true)}
           activeToken={effectiveToken}
@@ -606,12 +619,12 @@ export default function AppHome() {
             </div>
           ) : (
             <>
-              {process.env.NEXT_PUBLIC_ENABLE_DEMO_PREVIEWS !== 'true' && !['dashboard', 'employees', 'today-attendance', 'attendance', 'leave', 'salary', 'factory', 'people'].includes(activeTab) ? (
+              {!isModuleAvailable(activeTab, process.env.NEXT_PUBLIC_ENABLE_DEMO_PREVIEWS === "true") ? (
                 <CardWrapper title="This module is not available yet" description="Use employee, payroll, leave, attendance and factory tools for your company records." />
               ) : <>
               {activeTab === "dashboard" && (
                 <DashboardView
-                  onNavigate={setActiveTab}
+                  onNavigate={handleTabChange}
                   hasPunchedIn={todayAttendance.hasPunchedIn}
                   inTime={todayAttendance.inTime}
                   lastOutTime={todayAttendance.lastOutTime}
@@ -625,7 +638,7 @@ export default function AppHome() {
               )}
 
               {activeTab === "today-attendance" && (
-                <AllEmployeesTodayAttendanceView onNavigate={setActiveTab} />
+                <AllEmployeesTodayAttendanceView onNavigate={handleTabChange} />
               )}
 
               {activeTab === "hr-setup" && (
@@ -703,9 +716,18 @@ export default function AppHome() {
                 />
               )}
 
-              {activeTab === "people" && <PeopleOperationsView />}
+              {activeTab === "people" && (
+                <PeopleOperationsView
+                  key={peopleSection(activeSubOption)}
+                  kind={peopleSection(activeSubOption)}
+                  onSectionChange={(section) => handleTabChange("people", section)}
+                />
+              )}
               {activeTab === "factory" && (
                 <FactoryOperationsView
+                  key={factorySection(activeSubOption)}
+                  tab={factorySection(activeSubOption)}
+                  onSectionChange={(section) => handleTabChange("factory", section)}
                   canManage={
                     isCurrentAdmin ||
                     Boolean(permissions["action.employees.edit"])

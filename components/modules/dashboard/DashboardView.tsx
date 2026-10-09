@@ -1,5 +1,6 @@
 "use client";
 
+import { isModuleAvailable } from "@/lib/navigation";
 import { useState } from "react";
 import {
   ArrowRight,
@@ -312,7 +313,7 @@ export function DashboardView({
           }
         >
           <div className="divide-y divide-slate-100">
-            {reviewRows.map((row) => (
+            {reviewRows.filter((row) => isModuleAvailable(row.tab, process.env.NEXT_PUBLIC_ENABLE_DEMO_PREVIEWS === "true")).map((row) => (
               <button
                 key={row.title}
                 type="button"

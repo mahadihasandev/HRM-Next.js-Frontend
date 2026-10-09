@@ -37,6 +37,7 @@ interface TopNavbarProps {
   onLogout?: () => void;
   onToggleSidebar?: () => void;
   activeTab?: NavTab;
+  activeSubOption?: string;
 }
 
 export const PERSONA_PRESETS = [
@@ -87,6 +88,7 @@ export function TopNavbar({
   onLogout,
   onToggleSidebar,
   activeTab = "dashboard",
+  activeSubOption,
 }: TopNavbarProps) {
   const [date, setDate] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
@@ -127,6 +129,7 @@ export function TopNavbar({
   }, [menuOpen]);
   const section =
     NAV_MODULES.find((module) => module.id === activeTab)?.label || "Workspace";
+  const subsection = NAV_MODULES.find((module) => module.id === activeTab)?.subItems?.find((item) => item.id === activeSubOption)?.label;
   const initials = employeeName
     .split(" ")
     .filter(Boolean)
@@ -145,10 +148,14 @@ export function TopNavbar({
           <Menu className="size-5" />
         </button>
         <BrandMark className="!size-8 !rounded-lg lg:hidden" />
-        <div className="hidden items-center gap-2 text-xs sm:flex">
+        <div className="hidden min-w-0 items-center gap-2 text-xs sm:flex">
           <span className="text-slate-400">Workspace</span>
           <ChevronRight className="size-3 text-slate-300" />
           <span className="font-medium text-slate-800">{section}</span>
+          {subsection && <>
+            <ChevronRight className="size-3 shrink-0 text-slate-300" />
+            <span className="truncate text-slate-500">{subsection}</span>
+          </>}
         </div>
       </div>
       <div className="flex shrink-0 items-center gap-3 sm:gap-5">

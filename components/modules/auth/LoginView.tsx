@@ -433,7 +433,7 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
           <div className="mb-8">
             <Title
               level={1}
-              className="!text-[28px] !font-semibold !tracking-tight"
+              className="!text-[28px] !font-semibold !tracking-tight !text-gray-600"
             >
               {authMode === "login"
                 ? "Welcome to your workspace"

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import {
   Users,
@@ -15,7 +15,15 @@ import {
   Trash2,
   ChevronLeft,
   ChevronRight,
+  Cake,
+  Clock,
+  BarChart3,
+  FileText,
+  Archive,
+  TrendingUp,
+  CreditCard,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import {
   Title,
   CardWrapper,
@@ -57,6 +65,62 @@ export type EmployeeSubTab =
   | "archive"
   | "bulk-salary"
   | "id-cards";
+
+export const EMPLOYEE_TABS: Array<{
+  id: EmployeeSubTab;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  description: string;
+}> = [
+  {
+    id: "directory",
+    label: "Master Directory",
+    icon: Users,
+    description: "Active workforce directory with BLA 2006 statutory breakdown & records",
+  },
+  {
+    id: "birthdays",
+    label: "Birthdays Calendar",
+    icon: Cake,
+    description: "Upcoming workforce birthdays & team celebrations",
+  },
+  {
+    id: "probation",
+    label: "Probation & Reviews",
+    icon: Clock,
+    description: "Probation evaluations, review schedules & confirmation tracking",
+  },
+  {
+    id: "summary",
+    label: "Workforce Distribution",
+    icon: BarChart3,
+    description: "Department-wise & designation-wise headcount distributions",
+  },
+  {
+    id: "reports",
+    label: "Joiners & Separations",
+    icon: FileText,
+    description: "Monthly new hires, turnover analytics & attrition reports",
+  },
+  {
+    id: "archive",
+    label: "Deactive Archive",
+    icon: Archive,
+    description: "Archived, resigned & separated personnel records",
+  },
+  {
+    id: "bulk-salary",
+    label: "Bulk Salary Increment",
+    icon: TrendingUp,
+    description: "Annual increments, grade revisions & statutory payroll adjustments",
+  },
+  {
+    id: "id-cards",
+    label: "Smart ID Card Print",
+    icon: CreditCard,
+    description: "Print-ready QR/biometric smart employee ID cards",
+  },
+];
 
 function mapApiRecordToEmployee(item: EmployeeApiRecord): Employee {
   return {
@@ -116,18 +180,39 @@ interface EmployeeDirectoryViewProps {
   };
   isAdmin?: boolean;
   initialSubTab?: EmployeeSubTab;
+  onSubTabChange?: (tab: EmployeeSubTab) => void;
 }
 
 export function EmployeeDirectoryView({
   currentOperator,
   isAdmin,
   initialSubTab = "directory",
+  onSubTabChange,
 }: EmployeeDirectoryViewProps = {}) {
-  const activeSubTab: EmployeeSubTab =
-    initialSubTab === "add-employee" ? "directory" : initialSubTab;
+  const [activeSubTab, setActiveSubTab] = useState<EmployeeSubTab>(
+    initialSubTab === "add-employee" ? "directory" : initialSubTab,
+  );
   const [isAddModalOpen, setIsAddModalOpen] = useState(
     initialSubTab === "add-employee",
   );
+
+  useEffect(() => {
+    if (initialSubTab === "add-employee") {
+      setIsAddModalOpen(true);
+      setActiveSubTab("directory");
+    } else if (initialSubTab) {
+      setActiveSubTab(initialSubTab);
+    }
+  }, [initialSubTab]);
+
+  const handleSubTabClick = (tab: EmployeeSubTab) => {
+    if (tab === "add-employee") {
+      setIsAddModalOpen(true);
+      return;
+    }
+    setActiveSubTab(tab);
+    onSubTabChange?.(tab);
+  };
 
   const { data: employeeResponse, isLoading, isError } = useGetEmployeesQuery();
   const [createEmployee] = useCreateEmployeeMutation();
@@ -299,18 +384,62 @@ export function EmployeeDirectoryView({
         />
       )}
 
-      {activeSubTab !== 'directory' && process.env.NEXT_PUBLIC_ENABLE_DEMO_PREVIEWS !== 'true' ? (
-        <Banner variant="info" title="This employee tool is not available yet" description="Use the employee directory and approved payroll workflow for current records." />
-      ) : <>
-      {activeSubTab === "birthdays" && <EmployeeBirthdaysTab />}
-      {activeSubTab === "probation" && <EmployeeProbationTab />}
-      {activeSubTab === "summary" && <EmployeeSummaryTab />}
-      {activeSubTab === "reports" && <EmployeeReportsTab />}
-      {activeSubTab === "archive" && <EmployeeArchiveHoldTab />}
-      {activeSubTab === "bulk-salary" && <EmployeeBulkSalaryTab />}
-      {activeSubTab === "id-cards" && <EmployeeIdCardPrintTab />}
+      {/* Sub-Tabs Navigation Bar */}
+      <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs space-y-4">
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-2 border-b border-slate-200">
+          {EMPLOYEE_TABS.map((tab) => {
+            const isTabActive = tab.id === activeSubTab;
+            const TabIcon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => handleSubTabClick(tab.id)}
+                className={cn(
+                  "flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer",
+                  isTabActive
+                    ? "bg-teal-700 text-white shadow-xs"
+                    : "text-slate-700 hover:text-slate-950 hover:bg-slate-100"
+                )}
+              >
+                <TabIcon className={cn("h-4 w-4", isTabActive ? "text-white" : "text-slate-500")} />
+                <span className={cn(isTabActive ? "text-white font-bold" : "text-slate-800")}>
+                  {tab.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
 
-      </>}
+        {/* Tab Header Banner for Active Sub-Tab (when not directory) */}
+        {activeSubTab !== "directory" && (
+          <div className="flex items-center gap-3 pt-1 pb-2">
+            <div className="h-10 w-10 rounded-xl bg-slate-900 text-white flex items-center justify-center shrink-0 shadow-xs">
+              {(() => {
+                const CurrentIcon = EMPLOYEE_TABS.find((t) => t.id === activeSubTab)?.icon || Users;
+                return <CurrentIcon className="h-5 w-5" />;
+              })()}
+            </div>
+            <div>
+              <h2 className="text-base font-black text-slate-900 tracking-tight">
+                {EMPLOYEE_TABS.find((t) => t.id === activeSubTab)?.label}
+              </h2>
+              <p className="text-xs text-slate-600 font-medium">
+                {EMPLOYEE_TABS.find((t) => t.id === activeSubTab)?.description}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Render Non-Directory Sub-Tabs */}
+        {activeSubTab === "birthdays" && <EmployeeBirthdaysTab />}
+        {activeSubTab === "probation" && <EmployeeProbationTab />}
+        {activeSubTab === "summary" && <EmployeeSummaryTab />}
+        {activeSubTab === "reports" && <EmployeeReportsTab />}
+        {activeSubTab === "archive" && <EmployeeArchiveHoldTab />}
+        {activeSubTab === "bulk-salary" && <EmployeeBulkSalaryTab />}
+        {activeSubTab === "id-cards" && <EmployeeIdCardPrintTab />}
+      </div>
       {activeSubTab === "directory" && (
         <>
           {/* Search and Filters Bar with High Contrast */}

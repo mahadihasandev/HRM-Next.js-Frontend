@@ -637,7 +637,7 @@ export default function AppHome() {
 
               {activeTab === "employees" && (
                 <EmployeeDirectoryView
-                  key={activeSubOption || "directory"}
+                  key="employees-module"
                   currentOperator={currentEmployee}
                   isAdmin={isCurrentAdmin}
                   initialSubTab={
@@ -652,6 +652,7 @@ export default function AppHome() {
                       ? (activeSubOption as EmployeeSubTab)
                       : "directory"
                   }
+                  onSubTabChange={(sub) => handleTabChange("employees", sub)}
                 />
               )}
 

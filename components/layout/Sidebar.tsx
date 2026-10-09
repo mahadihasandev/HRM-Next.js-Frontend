@@ -508,26 +508,29 @@ export function Sidebar({
                                     .toLowerCase()
                                     .includes(searchQuery.toLowerCase()),
                               )
-                              .map((item) => (
-                                <button
-                                  type="button"
-                                  key={item.id}
-                                  aria-current={
-                                    active && activeSubOption === item.id
-                                      ? "page"
-                                      : undefined
-                                  }
-                                  onClick={() => navigate(module.id, item.id)}
-                                  className={cn(
-                                    "my-0.5 block w-full rounded-lg px-3 py-2 text-left text-xs leading-relaxed",
-                                    active && activeSubOption === item.id
-                                      ? "bg-teal-50 font-medium text-teal-800"
-                                      : "text-slate-500 hover:bg-slate-50 hover:text-slate-900",
-                                  )}
-                                >
-                                  {item.label}
-                                </button>
-                              ))}
+                              .map((item, itemIdx) => {
+                                const isSubActive =
+                                  active &&
+                                  (activeSubOption
+                                    ? activeSubOption === item.id
+                                    : itemIdx === 0);
+                                return (
+                                  <button
+                                    type="button"
+                                    key={item.id}
+                                    aria-current={isSubActive ? "page" : undefined}
+                                    onClick={() => navigate(module.id, item.id)}
+                                    className={cn(
+                                      "my-0.5 block w-full rounded-lg px-3 py-2 text-left text-xs leading-relaxed cursor-pointer",
+                                      isSubActive
+                                        ? "bg-teal-50 font-bold text-teal-800"
+                                        : "text-slate-500 hover:bg-slate-50 hover:text-slate-900",
+                                    )}
+                                  >
+                                    {item.label}
+                                  </button>
+                                );
+                              })}
                           </div>
                         )}
                       </div>

@@ -8,17 +8,13 @@ import {
   Banknote,
   CalendarCheck,
   CalendarRange,
-  CheckCircle2,
   ClipboardCheck,
-  Clock3,
   Factory,
   FileText,
-  LogOut,
   RefreshCw,
   Users,
 } from "lucide-react";
 import {
-  Badge,
   Banner,
   Button,
   CardWrapper,
@@ -29,22 +25,23 @@ import {
 } from "@/components/shared";
 import { type NavTab } from "@/components/layout/Sidebar";
 import { useGetDashboardMetricsQuery } from "@/store/services/dashboard";
-import { usePostMobilePunchMutation } from "@/store/services/attendance";
+import { AttendanceSummaryCard } from "@/components/shared/Attendance/AttendanceSummaryCard";
 import { DashboardPieChart } from "./DashboardPieChart";
 import { DashboardBarChart } from "./DashboardBarChart";
 import { AllEmployeesTodayAttendanceModal } from "@/components/modules/attendance/AllEmployeesTodayAttendanceModal";
 
 interface DashboardViewProps {
   onNavigate: (tab: NavTab) => void;
-  isPunchedIn?: boolean;
-  onQuickPunch?: () => void;
   hasPunchedIn?: boolean;
   inTime?: string | null;
   lastOutTime?: string | null;
   workingHours?: string | null;
   overtimeHours?: string | null;
-  onPunchIn?: () => void;
-  onPunchOut?: () => void;
+  onPunchIn: () => Promise<void>;
+  onPunchOut: () => Promise<void>;
+  attendanceLoading?: boolean;
+  attendanceError?: boolean;
+  onRefreshAttendance: () => Promise<void>;
   employeeName?: string;
   employeeFullId?: string;
 }
@@ -81,8 +78,6 @@ const shortcuts: {
 ];
 export function DashboardView({
   onNavigate,
-  isPunchedIn = false,
-  onQuickPunch,
   hasPunchedIn = false,
   inTime,
   lastOutTime,
@@ -90,6 +85,9 @@ export function DashboardView({
   overtimeHours,
   onPunchIn,
   onPunchOut,
+  attendanceLoading,
+  attendanceError,
+  onRefreshAttendance,
   employeeName = "",
   employeeFullId = "",
 }: DashboardViewProps) {
@@ -100,13 +98,7 @@ export function DashboardView({
     refetch,
     isFetching,
   } = useGetDashboardMetricsQuery();
-  const [postMobilePunch, { isLoading: isPunching }] =
-    usePostMobilePunchMutation();
   const [showAllAttendanceModal, setShowAllAttendanceModal] = useState(false);
-  const [feedback, setFeedback] = useState<{
-    variant: "success" | "danger";
-    message: string;
-  } | null>(null);
   const metrics = response?.data;
   const pending = metrics?.pending_tasks;
   const leaveCount =
@@ -117,31 +109,6 @@ export function DashboardView({
       (pending?.short_leaves || 0)
     : undefined;
   const placeholder = isLoading ? "…" : "—";
-  const today = new Date().toLocaleDateString("en-GB", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    timeZone: "Asia/Dhaka",
-  });
-  async function fallbackPunch() {
-    try {
-      await postMobilePunch({
-        latitude: 23.8058,
-        longitude: 90.3533,
-        note: isPunchedIn ? "Clock out" : "Clock in",
-      }).unwrap();
-      onQuickPunch?.();
-      setFeedback({
-        variant: "success",
-        message: "Your attendance has been recorded.",
-      });
-    } catch {
-      setFeedback({
-        variant: "danger",
-        message: "Attendance could not be recorded. Please try again.",
-      });
-    }
-  }
   const reviewRows = [
     {
       title: "Leave requests",
@@ -172,6 +139,7 @@ export function DashboardView({
     <div className="space-y-6">
       <PageHeader
         title="People overview"
+        titleClassName="!text-slate-900"
         subtitle="Your workforce, daily attendance and priorities in one place."
         action={
           <Button
@@ -184,41 +152,20 @@ export function DashboardView({
           </Button>
         }
       />
-      <section className="relative overflow-hidden rounded-2xl bg-[#123f40] px-6 py-6 text-white sm:px-8 sm:py-7">
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute -right-8 -top-32 size-96 rounded-full border-[50px] border-teal-300/5"
-        />
-        <div className="relative flex flex-col justify-between gap-5 sm:flex-row sm:items-center">
-          <div>
-            <Text
-              variant="caption"
-              className="!text-[10px] !font-medium !tracking-[.14em] !text-teal-200/80"
-            >
-              {today.toUpperCase()}
-            </Text>
-            <Title
-              level={2}
-              className="mt-2 !text-2xl !font-medium !text-white sm:!text-[28px]"
-            >
-              Welcome back, {employeeName.split(" ")[0] || "colleague"}
-              <span className="text-teal-300">.</span>
-            </Title>
-            <Text className="mt-2 max-w-xl !text-sm !text-teal-100/80">
-              Keep people connected and your factory moving. Start with what
-              needs your attention today.
-            </Text>
-          </div>
-          <Button
-            variant="outline"
-            onClick={() => onNavigate("leave")}
-            className="!border-white/20 !bg-white/10 !text-white hover:!bg-white/20"
-            rightIcon={<ArrowUpRight className="size-4" />}
-          >
-            Apply for leave
-          </Button>
-        </div>
-      </section>
+      <AttendanceSummaryCard
+        employeeName={employeeName}
+        employeeFullId={employeeFullId}
+        hasPunchedIn={hasPunchedIn}
+        inTime={inTime}
+        outTime={lastOutTime}
+        workingHours={workingHours}
+        overtimeHours={overtimeHours}
+        isLoading={attendanceLoading}
+        hasError={attendanceError}
+        onPunch={hasPunchedIn ? onPunchOut : onPunchIn}
+        onRefresh={onRefreshAttendance}
+        onViewAttendance={() => onNavigate("attendance")}
+      />
       {error && (
         <Banner
           variant="danger"
@@ -229,14 +176,6 @@ export function DashboardView({
               Try again
             </Button>
           }
-        />
-      )}
-      {feedback && (
-        <Banner
-          variant={feedback.variant}
-          title={feedback.message}
-          isDismissible
-          onClose={() => setFeedback(null)}
         />
       )}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
@@ -294,7 +233,7 @@ export function DashboardView({
           onOpenAllAttendance={() => setShowAllAttendanceModal(true)}
         />
       </div>
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.8fr)_minmax(0,1fr)]">
+      <div>
         <CardWrapper
           title="Needs your attention"
           headerClassName="!flex-row"
@@ -347,67 +286,6 @@ export function DashboardView({
               </button>
             ))}
           </div>
-        </CardWrapper>
-        <CardWrapper
-          title="My attendance"
-          description={`${employeeFullId} · Today's punch record`}
-          headerAction={
-            <Badge variant={hasPunchedIn ? "success" : "secondary"}>
-              {hasPunchedIn ? "Punched in" : "Not punched in"}
-            </Badge>
-          }
-        >
-          <div className="grid grid-cols-2 gap-4 rounded-xl bg-slate-50 p-4">
-            <div>
-              <Text variant="caption" className="!text-[11px]">
-                Punch in
-              </Text>
-              <Text className="mt-1 !text-lg !font-semibold !text-slate-800 tabular-nums">
-                {inTime || "—"}
-              </Text>
-            </div>
-            <div>
-              <Text variant="caption" className="!text-[11px]">
-                Last punch out
-              </Text>
-              <Text className="mt-1 !text-lg !font-semibold !text-slate-800 tabular-nums">
-                {lastOutTime || "—"}
-              </Text>
-            </div>
-          </div>
-          <div className="my-4 flex items-center justify-between text-xs text-slate-500">
-            <span className="flex items-center gap-1.5">
-              <Clock3 className="size-3.5" />
-              Duty hours
-            </span>
-            <span className="font-medium text-slate-700">
-              {workingHours || "Awaiting punch out"}
-            </span>
-          </div>
-          {overtimeHours && (
-            <Text variant="caption" className="mb-3">
-              Overtime: {overtimeHours}
-            </Text>
-          )}
-          <Button
-            className="w-full"
-            variant={hasPunchedIn ? "outline" : "default"}
-            onClick={
-              hasPunchedIn
-                ? onPunchOut || fallbackPunch
-                : onPunchIn || fallbackPunch
-            }
-            isLoading={isPunching}
-            leftIcon={
-              hasPunchedIn ? (
-                <LogOut className="size-4" />
-              ) : (
-                <CheckCircle2 className="size-4" />
-              )
-            }
-          >
-            {hasPunchedIn ? "Punch out" : "Punch in now"}
-          </Button>
         </CardWrapper>
       </div>
       <div>

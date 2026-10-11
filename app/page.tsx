@@ -40,7 +40,6 @@ import { RecruitmentView } from "@/components/modules/recruitment/RecruitmentVie
 import { CommissionView } from "@/components/modules/commission/CommissionView";
 import { DeviceIntegrationView } from "@/components/modules/attendance/DeviceIntegrationView";
 import { PerformanceLettersView } from "@/components/modules/performance/PerformanceLettersView";
-import { EmployeeSubTab } from "@/components/modules/employees/EmployeeDirectoryView";
 import { ApiCredentialsModal } from "@/components/modules/settings/ApiCredentialsModal";
 import { ManagePermissionsModal } from "@/components/modules/employees/ManagePermissionsModal";
 import { Employee, EmployeePermissionProfile } from "@/types/hrm";
@@ -99,6 +98,8 @@ export default function AppHome() {
     workingHours: null,
     overtimeHours: null,
   });
+  const [attendanceLoading, setAttendanceLoading] = useState(true);
+  const [attendanceError, setAttendanceError] = useState(false);
   const [isGrantingQuick, setIsGrantingQuick] = useState(false);
 
   // Derived current employee without cascading setState in effects
@@ -145,6 +146,8 @@ export default function AppHome() {
   }, []);
 
   const fetchTodayAttendance = useCallback(async (fullId: string) => {
+    setAttendanceLoading(true);
+    setAttendanceError(false);
     try {
       const canonicalId =
         fullId.toLowerCase() === "admin@smart.com" ||
@@ -155,8 +158,9 @@ export default function AppHome() {
       const res = await requestHrm(
         `${API_BASE_URL}/hrm/check-today-attendance?employee_full_id=${canonicalId}`,
       );
-      if (!res.ok) return;
+      if (!res.ok) throw new Error("Attendance could not load");
       const json = await res.json();
+      if (!json?.data) throw new Error("Attendance response is missing");
       if (json?.data) {
         setTodayAttendance({
           hasPunchedIn: Boolean(json.data.has_punched_in),
@@ -167,7 +171,10 @@ export default function AppHome() {
         });
       }
     } catch (err) {
+      setAttendanceError(true);
       console.warn("Could not fetch today attendance", err);
+    } finally {
+      setAttendanceLoading(false);
     }
   }, []);
 
@@ -183,6 +190,8 @@ export default function AppHome() {
         : currentEmployee.fullId;
 
     const loadRemoteData = async () => {
+      setAttendanceLoading(true);
+      setAttendanceError(false);
       try {
         const [permRes, attRes] = await Promise.allSettled([
           requestHrm(`${API_BASE_URL}/hrm/permissions/employee/${canonicalId}`),
@@ -198,8 +207,12 @@ export default function AppHome() {
           }
         }
 
+        if (!ignore && (attRes.status === "rejected" || !attRes.value.ok)) {
+          setAttendanceError(true);
+        }
         if (!ignore && attRes.status === "fulfilled" && attRes.value.ok) {
           const json = await attRes.value.json();
+          if (!json?.data) throw new Error("Attendance response is missing");
           if (json?.data) {
             setTodayAttendance({
               hasPunchedIn: Boolean(json.data.has_punched_in),
@@ -211,7 +224,10 @@ export default function AppHome() {
           }
         }
       } catch (err) {
+        if (!ignore) setAttendanceError(true);
         console.warn("Could not load employee permissions or attendance", err);
+      } finally {
+        if (!ignore) setAttendanceLoading(false);
       }
     };
 
@@ -346,6 +362,7 @@ export default function AppHome() {
       );
       setActiveTab(target.tab);
       setActiveSubOption(target.section);
+      if (target.tab === "dashboard") void fetchTodayAttendance(currentEmployee.fullId);
     }
   };
 
@@ -626,6 +643,9 @@ export default function AppHome() {
               {activeTab === "dashboard" && (
                 <DashboardView
                   onNavigate={handleTabChange}
+                  attendanceLoading={attendanceLoading}
+                  attendanceError={attendanceError}
+                  onRefreshAttendance={() => fetchTodayAttendance(currentEmployee.fullId)}
                   hasPunchedIn={todayAttendance.hasPunchedIn}
                   inTime={todayAttendance.inTime}
                   lastOutTime={todayAttendance.lastOutTime}

@@ -445,7 +445,7 @@ export default function AppHome() {
           ? "Principal Backend Engineer"
           : "Senior Field Sales Manager",
     department: currentEmployee.department,
-    company: "Smart Technologies (BD) Ltd.",
+    company: "HRM Technologies (BD) Ltd.",
     email: `${currentEmployee.name.toLowerCase().replace(/[^a-z]/g, "")}@smarterp.biz`,
     status: "Active",
   };

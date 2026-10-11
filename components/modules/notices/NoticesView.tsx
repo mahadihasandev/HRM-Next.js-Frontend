@@ -43,7 +43,7 @@ export function NoticesView() {
             publish_at: item.publish_at,
             expire_at: item.expire_at || "2026-12-31",
             department: item.department || "All Departments",
-            company: item.company || "Smart Group of Industries",
+            company: item.company || "HRM Group of Industries",
             priority: item.priority || "Normal",
           }));
           setNotices(mapped);
@@ -67,7 +67,7 @@ export function NoticesView() {
       publish_at: new Date().toISOString().split("T")[0],
       expire_at: "2026-10-31",
       department: "All Departments",
-      company: "Smart Technologies (BD) Ltd.",
+      company: "HRM Technologies (BD) Ltd.",
       priority,
     };
 

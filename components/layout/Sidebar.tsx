@@ -95,7 +95,7 @@ const MODULE_CATALOG: NavModule[] = [
       { id: "reports", label: "Joiners & Separations" },
       { id: "archive", label: "Deactive Staff Archive" },
       { id: "bulk-salary", label: "Bulk Salary Increment" },
-      { id: "id-cards", label: "Smart ID Card Print" },
+      { id: "id-cards", label: "HRM ID Card Print" },
     ],
   },
   {
@@ -371,7 +371,7 @@ export function Sidebar({
           <BrandMark />
           <div className="flex-1">
             <Text className="!text-lg !font-semibold !tracking-tight">
-              Smart HRM<span className="text-teal-700">.</span>
+              HRM<span className="text-teal-700">.</span>
             </Text>
             <Text
               variant="caption"

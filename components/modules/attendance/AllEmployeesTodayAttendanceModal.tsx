@@ -143,7 +143,7 @@ export function AllEmployeesTodayAttendanceModal({
               </Badge>
             </div>
             <p className="text-xs text-slate-600 font-medium">
-              Smart Technologies (BD) Ltd. &bull; Enterprise-wide daily attendance &bull; {new Date().toLocaleDateString("en-GB", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+              HRM Technologies (BD) Ltd. &bull; Enterprise-wide daily attendance &bull; {new Date().toLocaleDateString("en-GB", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
             </p>
           </div>
 

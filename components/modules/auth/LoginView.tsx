@@ -189,7 +189,7 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
       const data = await res.json();
       if (res.ok && data.status) {
         toast.success(
-          `Account registered! Welcome to Smart ERP, ${data.name}.`,
+          `Account registered! Welcome to HRM, ${data.name}.`,
         );
         const authenticatedUser: AuthUser = {
           id: data.user_id || data.employee_id || 100,
@@ -324,7 +324,7 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
         <div className="relative flex items-center gap-3">
           <BrandMark className="!bg-white/10" />
           <Text className="!text-xl !font-semibold !text-white">
-            Smart HRM<span className="text-teal-300">.</span>
+            HRM<span className="text-teal-300">.</span>
           </Text>
         </div>
         <div
@@ -404,14 +404,14 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
           variant="caption"
           className="relative !text-[11px] !text-teal-100/50"
         >
-          People & factory operations · Smart HRM
+          People & factory operations · HRM
         </Text>
       </section>
       <main className="flex min-h-dvh flex-col items-center justify-center px-6 py-10 sm:px-12">
         <div className="mb-10 flex items-center gap-3 lg:hidden">
           <BrandMark />
           <Text className="!text-xl !font-semibold">
-            Smart HRM<span className="text-teal-700">.</span>
+            HRM<span className="text-teal-700">.</span>
           </Text>
         </div>
         <div
@@ -442,7 +442,7 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
             <Text className="mt-3 !text-sm !text-slate-500">
               {authMode === "login"
                 ? "Sign in to manage your workday, people and operations."
-                : "Verify your email to get started with Smart HRM."}
+                : "Verify your email to get started with HRM."}
             </Text>
           </div>
           {errorMessage && (
@@ -902,7 +902,7 @@ export function LoginView({ onLoginSuccess }: LoginViewProps) {
       </main>
 
       <div className="sr-only" aria-hidden="true">
-        Smart HRM workspace
+        HRM workspace
       </div>
     </div>
   );

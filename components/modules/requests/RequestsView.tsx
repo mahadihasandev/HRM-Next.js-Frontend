@@ -55,7 +55,7 @@ const INITIAL_DAILY_WORKS: DailyWorkItem[] = [
       { organization: "Prime Bank PLC (Garib-E-Newaz)", contactPerson: "Operations Desk", phone: "01988776655", purpose: "BEFTN Salary Advice confirmation", status: "Finish" },
     ],
     appointments: [
-      { organization: "Smart Technologies (BD) Ltd.", contactPerson: "Chief Operating Officer", phone: "01717186089", purpose: "Q4 Field Force Strategy & DA/TA budget", status: "Waiting" },
+      { organization: "HRM Technologies (BD) Ltd.", contactPerson: "Chief Operating Officer", phone: "01717186089", purpose: "Q4 Field Force Strategy & DA/TA budget", status: "Waiting" },
     ],
   },
   {
@@ -70,7 +70,7 @@ const INITIAL_DAILY_WORKS: DailyWorkItem[] = [
       { organization: "Gulshan Auto Care", contactPerson: "Mamunur Rashid", phone: "01811223344", purpose: "Direct dealership onboarding follow-up", status: "Finish" },
     ],
     appointments: [
-      { organization: "Smart HQ", contactPerson: "Finance Controller", phone: "01711000001", purpose: "NBR Tax Deductions & PF audit reconciliation", status: "Finish" },
+      { organization: "HRM HQ", contactPerson: "Finance Controller", phone: "01711000001", purpose: "NBR Tax Deductions & PF audit reconciliation", status: "Finish" },
     ],
   },
 ];
@@ -81,7 +81,7 @@ const INITIAL_TRAININGS: TrainingProgramItem[] = [
     title: "Advanced Field Sales Execution & Outlet Merchandising",
     startDate: "2026-10-15",
     endDate: "2026-10-18",
-    venue: "Smart Training Institute, Level 5, Dhaka",
+    venue: "HRM Training Institute, Level 5, Dhaka",
     duration: "4 Days (24 Hours)",
     trainer: "Farhan Masud (Senior Sales Director)",
     status: "Upcoming",

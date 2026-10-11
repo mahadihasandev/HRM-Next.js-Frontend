@@ -272,7 +272,7 @@ export function PerformanceLettersView({ initialSubTab }: PerformanceLettersView
                   <div className="p-6 bg-slate-50 rounded-xl font-serif text-slate-800 text-xs sm:text-sm leading-relaxed border border-slate-200 space-y-3">
                     <div className="text-center border-b border-slate-300 pb-3 mb-3">
                       <h2 className="text-lg font-bold text-gray-700 font-sans">
-                        SMART TECHNOLOGIES (BD) LTD.
+                        HRM TECHNOLOGIES (BD) LTD.
                       </h2>
                       <p className="text-xs text-slate-600 font-sans">
                         Corporate Headquarters: Tejgaon Commercial Area, Dhaka-1208, Bangladesh
@@ -283,7 +283,7 @@ export function PerformanceLettersView({ initialSubTab }: PerformanceLettersView
                     </p>
                     <p className="font-bold">To: Abdul Halim (Staff ID: SMT-0051)</p>
                     <p>
-                      We have the pleasure in confirming your record and statutory documentation under the official governance policies of Smart Group of Industries.
+                      We have the pleasure in confirming your record and statutory documentation under the official governance policies of HRM Group of Industries.
                     </p>
                     <p>
                       This certificate is issued under the authenticated authority of the Human Resources & Legal Compliance Directorate.
@@ -292,7 +292,7 @@ export function PerformanceLettersView({ initialSubTab }: PerformanceLettersView
                       <div>
                         <div className="h-0.5 w-36 bg-slate-400 mb-1" />
                         <p className="text-xs font-bold font-sans">Head of Human Resources</p>
-                        <p className="text-[10px] text-slate-500 font-sans">Smart Group of Industries</p>
+                        <p className="text-[10px] text-slate-500 font-sans">HRM Group of Industries</p>
                       </div>
                       <div className="text-right">
                         <div className="h-10 w-24 border border-dashed border-blue-400 rounded flex items-center justify-center text-[10px] font-mono text-blue-600">

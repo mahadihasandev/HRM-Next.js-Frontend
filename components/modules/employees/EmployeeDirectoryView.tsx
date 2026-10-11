@@ -116,9 +116,9 @@ export const EMPLOYEE_TABS: Array<{
   },
   {
     id: "id-cards",
-    label: "Smart ID Card Print",
+    label: "HRM ID Card Print",
     icon: CreditCard,
-    description: "Print-ready QR/biometric smart employee ID cards",
+    description: "Print-ready QR/biometric HRM employee ID cards",
   },
 ];
 

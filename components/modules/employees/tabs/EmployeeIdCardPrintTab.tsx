@@ -27,7 +27,7 @@ const SAMPLE_ID_CARDS: IdCardProfile[] = [
     joiningDate: "2020-02-01",
     validTill: "2028-12-31",
     emergencyPhone: "+880 1717-186089",
-    company: "Smart Technologies (BD) Ltd.",
+    company: "HRM Technologies (BD) Ltd.",
   },
   {
     name: "Sayed Mahfuzur Rahman",
@@ -38,7 +38,7 @@ const SAMPLE_ID_CARDS: IdCardProfile[] = [
     joiningDate: "2021-06-15",
     validTill: "2028-12-31",
     emergencyPhone: "+880 1819-234567",
-    company: "Smart Technologies (BD) Ltd.",
+    company: "HRM Technologies (BD) Ltd.",
   },
   {
     name: "Kazi Farhan Ahmed",
@@ -49,7 +49,7 @@ const SAMPLE_ID_CARDS: IdCardProfile[] = [
     joiningDate: "2018-01-10",
     validTill: "2028-12-31",
     emergencyPhone: "+880 1912-345678",
-    company: "Smart Technologies (BD) Ltd.",
+    company: "HRM Technologies (BD) Ltd.",
   },
 ];
 
@@ -70,10 +70,10 @@ export function EmployeeIdCardPrintTab() {
           </div>
           <div>
             <h4 className="text-sm font-extrabold text-slate-900">
-              Corporate Smart ID Card Generator
+              Corporate HRM ID Card Generator
             </h4>
             <p className="text-xs text-slate-500">
-              Generate standardized ISO-CR80 PVC employee smart cards with QR & barcode authentication
+              Generate standardized ISO-CR80 PVC employee HRM cards with QR & barcode authentication
             </p>
           </div>
         </div>
@@ -113,7 +113,7 @@ export function EmployeeIdCardPrintTab() {
           {/* Top Brand Header */}
           <div className="bg-[#0b1329] text-white p-3.5 border-b border-blue-600">
             <h5 className="font-extrabold text-xs tracking-wider uppercase text-blue-400">
-              Smart Group of Industries
+              HRM Group of Industries
             </h5>
             <p className="text-[9px] text-slate-300 font-medium">Enterprise Workforce Identity</p>
           </div>
@@ -165,7 +165,7 @@ export function EmployeeIdCardPrintTab() {
               </p>
             </div>
             <p className="text-[9px] text-slate-600 leading-relaxed">
-              1. This smart identity card is the official property of Smart Technologies (BD) Ltd.
+              1. This HRM identity card is the official property of HRM Technologies (BD) Ltd.
             </p>
             <p className="text-[9px] text-slate-600 leading-relaxed">
               2. The cardholder must carry and display this card on enterprise premises and authorized field territories.
@@ -187,7 +187,7 @@ export function EmployeeIdCardPrintTab() {
               <p className="text-[9px] font-bold text-slate-800">Authorized Signature</p>
             </div>
             <div className="text-right">
-              <p className="text-[8px] font-mono text-slate-400">SMART-VERIFY-V2</p>
+              <p className="text-[8px] font-mono text-slate-400">HRM-VERIFY-V2</p>
             </div>
           </div>
         </div>

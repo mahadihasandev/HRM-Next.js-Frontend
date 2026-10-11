@@ -49,7 +49,7 @@ export const EMPLOYEE_SECTIONS = [
   { id: "reports", label: "Joiners & Separations" },
   { id: "archive", label: "Deactive Staff Archive" },
   { id: "bulk-salary", label: "Bulk Salary Increment" },
-  { id: "id-cards", label: "Smart ID Card Print" },
+  { id: "id-cards", label: "HRM ID Card Print" },
 ] as const;
 export type EmployeeSection = (typeof EMPLOYEE_SECTIONS)[number]["id"];
 

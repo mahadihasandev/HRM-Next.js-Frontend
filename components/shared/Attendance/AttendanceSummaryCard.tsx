@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import { ArrowRight, Clock3, LogIn, LogOut, RefreshCw } from "lucide-react";
 import { Badge, Button, CardWrapper, Text, Title } from "@/components/shared";
+import { FingerprintPunchButton } from "./FingerprintPunchButton";
 
 interface AttendanceSummaryCardProps {
   employeeName: string;
@@ -14,7 +14,7 @@ interface AttendanceSummaryCardProps {
   overtimeHours?: string | null;
   isLoading?: boolean;
   hasError?: boolean;
-  onPunch: () => Promise<void>;
+  onPunch: () => Promise<boolean>;
   onRefresh: () => Promise<void>;
   onViewAttendance: () => void;
 }
@@ -24,18 +24,12 @@ export function AttendanceSummaryCard({
   workingHours, overtimeHours, isLoading = false, hasError = false,
   onPunch, onRefresh, onViewAttendance,
 }: AttendanceSummaryCardProps) {
-  const [isPunching, setIsPunching] = useState(false);
   const unavailable = isLoading || hasError;
   const status = isLoading ? "Loading attendance" : hasError ? "Attendance unavailable"
     : outTime ? "Punched out" : hasPunchedIn ? "Punched in" : "Not punched in";
   const today = new Date().toLocaleDateString("en-GB", {
     weekday: "short", day: "numeric", month: "short", timeZone: "UTC",
   });
-
-  async function handlePunch() {
-    setIsPunching(true);
-    try { await onPunch(); } finally { setIsPunching(false); }
-  }
 
   return (
     <CardWrapper
@@ -90,9 +84,11 @@ export function AttendanceSummaryCard({
         )}
         <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
           <Button variant="ghost" size="sm" onClick={onViewAttendance} rightIcon={<ArrowRight className="size-3.5" />}>View my attendance</Button>
-          <Button size="sm" onClick={() => void handlePunch()} disabled={unavailable} isLoading={isPunching} leftIcon={hasPunchedIn ? <LogOut className="size-4" /> : <LogIn className="size-4" />}>
-            {outTime ? "Update punch out" : hasPunchedIn ? "Punch out" : "Punch in"}
-          </Button>
+          <FingerprintPunchButton
+            label={outTime ? "Update punch out" : hasPunchedIn ? "Punch out" : "Punch in"}
+            onPunch={onPunch}
+            disabled={unavailable}
+          />
         </div>
       </div>
     </CardWrapper>

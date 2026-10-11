@@ -274,7 +274,7 @@ export default function AppHome() {
       }
 
       const json = await res.json();
-      if (res.ok && json.status) {
+      if (res.ok && (json.status === true || json.status === "success")) {
         setTodayAttendance((prev) => ({
           ...prev,
           hasPunchedIn: true,
@@ -284,14 +284,17 @@ export default function AppHome() {
           json.message ||
             `Successfully Punched In at ${json.data?.in_time || nowTime}`,
         );
+        return true;
       } else {
         toast.error(
           json.message || "An employee can only punch in once per day.",
         );
+        return false;
       }
     } catch (err: unknown) {
       console.error("Punch In failed", err);
       toast.error("Punch In failed. Please verify your connection.");
+      return false;
     }
   };
 
@@ -329,7 +332,7 @@ export default function AppHome() {
       }
 
       const json = await res.json();
-      if (res.ok && json.status) {
+      if (res.ok && (json.status === true || json.status === "success")) {
         setTodayAttendance((prev) => ({
           ...prev,
           lastOutTime: json.data?.out_time || nowTime,
@@ -340,14 +343,17 @@ export default function AppHome() {
           json.message ||
             `Punch Out recorded at ${json.data?.out_time || nowTime}`,
         );
+        return true;
       } else {
         toast.error(
           json.message || "You must punch in first before punching out.",
         );
+        return false;
       }
     } catch (err: unknown) {
       console.error("Punch Out failed", err);
       toast.error("Punch Out failed. Please try again.");
+      return false;
     }
   };
 

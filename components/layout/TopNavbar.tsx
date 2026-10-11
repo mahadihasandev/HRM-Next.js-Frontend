@@ -4,13 +4,13 @@ import { useEffect, useRef, useState } from "react";
 import {
   ChevronDown,
   ChevronRight,
-  Clock3,
   LogOut,
   Menu,
   Settings2,
   ShieldCheck,
 } from "lucide-react";
-import { BrandMark, Button, Text } from "@/components/shared";
+import { FingerprintPunchButton } from "@/components/shared/Attendance/FingerprintPunchButton";
+import { BrandMark, Text } from "@/components/shared";
 import { NAV_MODULES, type NavTab } from "./Sidebar";
 
 interface TopNavbarProps {
@@ -23,8 +23,8 @@ interface TopNavbarProps {
   inTime?: string | null;
   lastOutTime?: string | null;
   workingHours?: string | null;
-  onPunchIn?: () => void;
-  onPunchOut?: () => void;
+  onPunchIn?: () => Promise<boolean>;
+  onPunchOut?: () => Promise<boolean>;
   onQuickPunch?: () => void;
   isPunchedIn?: boolean;
   onOpenPermissions?: () => void;
@@ -174,20 +174,17 @@ export function TopNavbar({
             In at {inTime}
           </Text>
         )}
-        <Button
-          size="sm"
-          variant={hasPunchedIn ? "outline" : "default"}
-          onClick={
-            hasPunchedIn
-              ? onPunchOut || onQuickPunch
-              : onPunchIn || onQuickPunch
-          }
-          leftIcon={<Clock3 className="size-3.5" />}
-          className="!h-9 !rounded-lg !px-3"
-          aria-label={hasPunchedIn ? "Punch out" : "Punch in"}
-        >
-          {hasPunchedIn ? "Punch out" : "Punch in"}
-        </Button>
+        <FingerprintPunchButton
+          compact
+          label={hasPunchedIn ? "Punch out" : "Punch in"}
+          onPunch={async () => {
+            const action = hasPunchedIn ? onPunchOut : onPunchIn;
+            if (action) return action();
+            onQuickPunch?.();
+            return false;
+          }}
+          disabled={!onPunchIn && !onPunchOut && !onQuickPunch}
+        />
         <div ref={account} className="relative">
           <button
             ref={accountButton}

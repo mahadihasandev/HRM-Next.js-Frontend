@@ -37,8 +37,8 @@ interface DashboardViewProps {
   lastOutTime?: string | null;
   workingHours?: string | null;
   overtimeHours?: string | null;
-  onPunchIn: () => Promise<void>;
-  onPunchOut: () => Promise<void>;
+  onPunchIn: () => Promise<boolean>;
+  onPunchOut: () => Promise<boolean>;
   attendanceLoading?: boolean;
   attendanceError?: boolean;
   onRefreshAttendance: () => Promise<void>;

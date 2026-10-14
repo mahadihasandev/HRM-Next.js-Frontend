@@ -1,22 +1,19 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   X,
   UserPlus,
-  Building2,
   Banknote,
-  ShieldCheck,
   Mail,
   CheckCircle2,
   AlertCircle,
-  KeyRound,
   Send,
   RefreshCw,
   Loader2,
 } from "lucide-react";
 import toast from "react-hot-toast";
-import { Title, Subtitle, Button, Input, Label, Badge } from "@/components/shared";
+import { Title, Subtitle, Button, Input, Label } from "@/components/shared";
 import { CreateEmployeePayload } from "@/types/hrm";
 import {
   useSendVerificationCodeMutation,
@@ -68,46 +65,52 @@ export function RegisterEmployeeModal({
   // Email Verification State
   const [verificationCode, setVerificationCode] = useState("");
   const [isCodeSent, setIsCodeSent] = useState(false);
-  const [isVerified, setIsVerified] = useState(false);
-  const [devCodePreview, setDevCodePreview] = useState<string | null>(null);
+  const [verificationToken, setVerificationToken] = useState<string | null>(null);
+  const [cooldown, setCooldown] = useState(0);
+  const [secondsRemaining, setSecondsRemaining] = useState(0);
+  const isVerified = Boolean(verificationToken) && secondsRemaining > 0;
   const [verificationError, setVerificationError] = useState<string | null>(null);
 
   const [sendCode, { isLoading: isSendingCode }] = useSendVerificationCodeMutation();
   const [verifyCode, { isLoading: isVerifyingCode }] = useVerifyCodeMutation();
 
+  useEffect(() => {
+    if (!isCodeSent) return;
+    const timer = setInterval(() => {
+      setCooldown((value) => Math.max(0, value - 1));
+      setSecondsRemaining((value) => Math.max(0, value - 1));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [isCodeSent]);
+
   const handleEmailChange = (newEmail: string) => {
     setEmail(newEmail);
     if (isVerified || isCodeSent) {
-      setIsVerified(false);
+      setVerificationToken(null);
       setIsCodeSent(false);
+      setCooldown(0);
       setVerificationCode("");
-      setDevCodePreview(null);
       setVerificationError(null);
     }
   };
 
   const handleSendVerificationCode = async () => {
-    const targetEmail =
-      email.trim() ||
-      (name.trim() ? `${name.toLowerCase().replace(/[^a-z0-9]/g, "")}@smarterp.biz` : "");
-    if (!targetEmail) {
-      toast.error("Please enter a valid email address first.");
+    const targetEmail = email.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(targetEmail)) {
+      setVerificationError("Enter the employee's real email address first.");
       return;
     }
-    if (!email.trim()) {
-      setEmail(targetEmail);
-    }
+    if (isSendingCode || isVerifyingCode || cooldown > 0) return;
     setVerificationError(null);
     try {
       const res = await sendCode({ email: targetEmail }).unwrap();
       setIsCodeSent(true);
-      setIsVerified(false);
-      if (res.dev_code) {
-        setDevCodePreview(res.dev_code);
-        toast.success(`Verification code sent! Code: ${res.dev_code}`, { duration: 6000 });
-      } else {
-        toast.success("Verification code sent to email inbox!");
-      }
+      setVerificationToken(null);
+      setEmail(targetEmail);
+      setVerificationCode("");
+      setCooldown(res.resend_after_seconds ?? 60);
+      setSecondsRemaining(res.expires_in_minutes * 60);
+      toast.success("Code sent. Ask the employee to check their inbox and spam folder.");
     } catch (err: unknown) {
       const msg =
         err && typeof err === "object" && "data" in err
@@ -121,7 +124,7 @@ export function RegisterEmployeeModal({
   };
 
   const handleVerifyCode = async () => {
-    if (!verificationCode.trim()) {
+    if (!/^[0-9]{6}$/.test(verificationCode.trim()) || secondsRemaining <= 0) {
       setVerificationError("Please enter the 6-digit code.");
       return;
     }
@@ -131,8 +134,8 @@ export function RegisterEmployeeModal({
         email: email.trim(),
         code: verificationCode.trim(),
       }).unwrap();
-      if (res.verified) {
-        setIsVerified(true);
+      if (res.verified && res.verification_token) {
+        setVerificationToken(res.verification_token);
         toast.success("Email verified successfully! ✓");
       } else {
         setVerificationError(res.message || "Invalid verification code.");
@@ -157,20 +160,16 @@ export function RegisterEmployeeModal({
     if (!name.trim() || !designation.trim()) return;
     if (password.trim().length < 8) { toast.error("Set a password of at least 8 characters."); return; }
 
-    if (isCodeSent && !isVerified) {
+    if (!email.trim() || !isVerified || !verificationToken) {
       toast.error("Please verify your 6-digit email code before completing registration.");
       return;
     }
-
-    const finalEmail =
-      email.trim() ||
-      `${name.toLowerCase().replace(/[^a-z0-9]/g, "")}@smarterp.biz`;
 
     const payload: CreateEmployeePayload = {
       name: name.trim(),
       designation: designation.trim(),
       department,
-      email: finalEmail,
+      email: email.trim().toLowerCase(),
       phone: phone.trim() || "01712000000",
       gender,
       blood_group: bloodGroup,
@@ -180,8 +179,7 @@ export function RegisterEmployeeModal({
       bank_name: bankName,
       bank_account_no: bankAccountNo.trim(),
       password: password.trim(),
-      verification_code: isVerified ? verificationCode.trim() : undefined,
-      is_verified: isVerified,
+      email_verification_token: verificationToken,
     };
 
     onSubmit(payload);
@@ -253,7 +251,7 @@ export function RegisterEmployeeModal({
             {/* Email Verification Box */}
             <div className="sm:col-span-2 p-3 bg-slate-50 border-2 border-slate-300 rounded-xl space-y-2.5">
               <div className="flex items-center justify-between">
-                <Label className="flex items-center gap-1.5 font-bold text-slate-900">
+                <Label htmlFor="new-employee-email" required className="flex items-center gap-1.5 font-bold text-slate-900">
                   <Mail className="h-4 w-4 text-blue-600" />
                   Corporate / Personal Email &amp; Verification
                 </Label>
@@ -272,11 +270,15 @@ export function RegisterEmployeeModal({
               <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
                 <div className="flex-1">
                   <input
+                    id="new-employee-email"
                     type="email"
-                    placeholder="e.g. tariqul@smarterp.biz"
+                    required
+                    maxLength={150}
+                    autoComplete="email"
+                    placeholder="employee@example.com"
                     value={email}
                     onChange={(e) => handleEmailChange(e.target.value)}
-                    disabled={isVerified}
+                    disabled={isVerified || isSendingCode || isVerifyingCode || isLoading}
                     className="w-full px-3 py-2 bg-white border-2 border-slate-300 rounded-xl text-xs font-bold text-slate-900 placeholder:text-slate-500 focus:outline-none focus:border-slate-900 disabled:bg-slate-100 disabled:text-slate-600"
                   />
                 </div>
@@ -284,7 +286,7 @@ export function RegisterEmployeeModal({
                   <button
                     type="button"
                     onClick={handleSendVerificationCode}
-                    disabled={isSendingCode}
+                    disabled={isSendingCode || isVerifyingCode || !email.trim() || cooldown > 0 || isLoading}
                     className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-extrabold flex items-center justify-center gap-1.5 transition-colors cursor-pointer shrink-0 disabled:opacity-50"
                   >
                     {isSendingCode ? (
@@ -295,7 +297,7 @@ export function RegisterEmployeeModal({
                     ) : isCodeSent ? (
                       <>
                         <RefreshCw className="h-3.5 w-3.5" />
-                        <span>Resend Code</span>
+                        <span>{cooldown > 0 ? `Resend in ${cooldown}s` : "Resend Code"}</span>
                       </>
                     ) : (
                       <>
@@ -307,11 +309,13 @@ export function RegisterEmployeeModal({
                 ) : (
                   <button
                     type="button"
+                    disabled={isLoading}
                     onClick={() => {
-                      setIsVerified(false);
+                      setVerificationToken(null);
                       setIsCodeSent(false);
                       setVerificationCode("");
-                      setDevCodePreview(null);
+                      setCooldown(0);
+                      setVerificationError(null);
                     }}
                     className="px-3 py-2 bg-white border-2 border-slate-300 hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-bold transition-colors cursor-pointer shrink-0"
                   >
@@ -320,22 +324,13 @@ export function RegisterEmployeeModal({
                 )}
               </div>
 
-              {/* Dev Code Quick Fill Callout */}
-              {devCodePreview && !isVerified && (
-                <div className="p-2.5 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between text-[11px] text-blue-900 font-bold">
-                  <div className="flex items-center gap-1.5">
-                    <KeyRound className="h-3.5 w-3.5 text-blue-600 shrink-0" />
-                    <span>Test OTP: <strong className="font-mono text-xs text-blue-700 tracking-wider">{devCodePreview}</strong></span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setVerificationCode(devCodePreview)}
-                    className="text-blue-700 underline text-[10px] font-black cursor-pointer hover:text-blue-900"
-                  >
-                    Auto-Fill
-                  </button>
-                </div>
-              )}
+              <p className="text-[11px] text-slate-600" role="status">
+                {isVerified ? "Email confirmed. Complete registration before the verification expires."
+                  : isCodeSent ? secondsRemaining > 0
+                    ? `Code sent to ${email}. Expires in ${Math.ceil(secondsRemaining / 60)} minutes. Ask the employee for the code from their inbox.`
+                    : "Verification expired. Send a new code to continue."
+                  : "A real email address is required. Send a code and verify it before enrolling the employee."}
+              </p>
 
               {/* Verification Code Input Section */}
               {isCodeSent && !isVerified && (
@@ -343,6 +338,10 @@ export function RegisterEmployeeModal({
                   <div className="flex-1">
                     <input
                       type="text"
+                      aria-label="Email verification code"
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                      pattern="[0-9]{6}"
                       maxLength={6}
                       placeholder="Enter 6-digit verification code"
                       value={verificationCode}
@@ -353,7 +352,7 @@ export function RegisterEmployeeModal({
                   <button
                     type="button"
                     onClick={handleVerifyCode}
-                    disabled={isVerifyingCode || !verificationCode.trim()}
+                    disabled={isVerifyingCode || isSendingCode || verificationCode.length !== 6 || secondsRemaining <= 0}
                     className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black flex items-center justify-center gap-1.5 transition-colors cursor-pointer shrink-0 disabled:opacity-50"
                   >
                     {isVerifyingCode ? (
@@ -420,7 +419,9 @@ export function RegisterEmployeeModal({
             <div className="sm:col-span-2">
               <Input
                 label="Portal & Mobile Punch Login Password"
-                type="text"
+                type="password"
+                required
+                minLength={8}
                 placeholder="Set a password of at least 8 characters"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -504,7 +505,7 @@ export function RegisterEmployeeModal({
             </Button>
             <Button
               type="submit"
-              disabled={isLoading || !name.trim()}
+              disabled={isLoading || !name.trim() || !isVerified || isSendingCode || isVerifyingCode}
               className="bg-blue-600 hover:bg-blue-700 text-white font-black px-6 shadow-md shadow-blue-600/30 w-full sm:w-auto"
             >
               {isLoading ? "Enrolling..." : "Enroll & Issue ID"}

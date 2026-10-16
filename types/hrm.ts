@@ -220,7 +220,7 @@ export interface CreateEmployeePayload {
   name: string;
   designation: string;
   department: string;
-  email?: string;
+  email: string;
   phone?: string;
   blood_group?: string;
   gender?: "Male" | "Female" | "Other";
@@ -231,8 +231,7 @@ export interface CreateEmployeePayload {
   bank_name?: string;
   bank_account_no?: string;
   password?: string;
-  verification_code?: string;
-  is_verified?: boolean;
+  email_verification_token: string;
 }
 
 /** Payload used to update an existing Employee */

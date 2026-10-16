@@ -55,6 +55,7 @@ export interface SendVerificationCodeResponse {
   email: string;
   dev_code?: string;
   expires_in_minutes: number;
+  resend_after_seconds?: number;
 }
 
 export interface VerifyCodeRequest {
@@ -65,6 +66,7 @@ export interface VerifyCodeRequest {
 export interface VerifyCodeResponse {
   status: boolean;
   verified: boolean;
+  verification_token?: string;
   message: string;
 }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import toast from "react-hot-toast";
 import {
   Users,
@@ -23,7 +23,6 @@ import {
   TrendingUp,
   CreditCard,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
 import {
   Title,
   CardWrapper,
@@ -187,32 +186,11 @@ export function EmployeeDirectoryView({
   currentOperator,
   isAdmin,
   initialSubTab = "directory",
-  onSubTabChange,
 }: EmployeeDirectoryViewProps = {}) {
-  const [activeSubTab, setActiveSubTab] = useState<EmployeeSubTab>(
-    initialSubTab === "add-employee" ? "directory" : initialSubTab,
-  );
+  const activeSubTab = initialSubTab === "add-employee" ? "directory" : initialSubTab;
   const [isAddModalOpen, setIsAddModalOpen] = useState(
     initialSubTab === "add-employee",
   );
-
-  useEffect(() => {
-    if (initialSubTab === "add-employee") {
-      setIsAddModalOpen(true);
-      setActiveSubTab("directory");
-    } else if (initialSubTab) {
-      setActiveSubTab(initialSubTab);
-    }
-  }, [initialSubTab]);
-
-  const handleSubTabClick = (tab: EmployeeSubTab) => {
-    if (tab === "add-employee") {
-      setIsAddModalOpen(true);
-      return;
-    }
-    setActiveSubTab(tab);
-    onSubTabChange?.(tab);
-  };
 
   const { data: employeeResponse, isLoading, isError } = useGetEmployeesQuery();
   const [createEmployee] = useCreateEmployeeMutation();
@@ -254,7 +232,9 @@ export function EmployeeDirectoryView({
       );
       setTimeout(() => setFeedbackMsg(null), 6000);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Server error";
+      const msg = err instanceof Error ? err.message : err && typeof err === "object" && "data" in err
+        ? (err as { data?: { message?: string } }).data?.message || "Registration failed. Verify the email again and retry."
+        : "Server error";
       toast.error("Error registering employee: " + msg);
     } finally {
       setIsSubmitting(false);
@@ -882,12 +862,12 @@ export function EmployeeDirectoryView({
       )}
 
       {/* Register New Employee Modal */}
-      <RegisterEmployeeModal
+      {isAddModalOpen && <RegisterEmployeeModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onSubmit={handleCreateEmployee}
         isLoading={isSubmitting}
-      />
+      />}
 
       {/* Edit Employee Modal */}
       <EditEmployeeModal
